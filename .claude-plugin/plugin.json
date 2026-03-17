@@ -1,0 +1,13 @@
+{
+  "name": "filestack",
+  "description": "Official Filestack plugin — upload files, build transformations, and generate security policies directly from Claude Code.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Filestack",
+    "email": "support@filestack.com"
+  },
+  "homepage": "https://www.filestack.com/docs",
+  "repository": "https://github.com/filestack/filestack-claude-plugin",
+  "license": "MIT",
+  "keywords": ["filestack", "file-upload", "cdn", "image-transformation", "storage", "security"]
+}
