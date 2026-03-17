@@ -1,0 +1,102 @@
+{
+  "transforms": [
+    {
+      "name": "resize",
+      "description": "Resize an image",
+      "params": [
+        { "name": "width", "type": "number", "description": "Width in pixels" },
+        { "name": "height", "type": "number", "description": "Height in pixels" },
+        { "name": "fit", "type": "string", "values": ["clip", "crop", "scale", "max"], "description": "Resize strategy" },
+        { "name": "align", "type": "string", "values": ["top", "bottom", "left", "right", "center", "faces"], "description": "Alignment when cropping" }
+      ]
+    },
+    {
+      "name": "crop",
+      "description": "Crop an image",
+      "params": [
+        { "name": "dim", "type": "string", "description": "Crop dimensions as [x,y,w,h]" }
+      ]
+    },
+    {
+      "name": "rotate",
+      "description": "Rotate an image",
+      "params": [
+        { "name": "deg", "type": "number", "description": "Degrees to rotate (0-359, or exif)" },
+        { "name": "background", "type": "string", "description": "Background color for empty areas (hex)" }
+      ]
+    },
+    {
+      "name": "flip",
+      "description": "Flip image vertically (mirror over horizontal axis)",
+      "params": []
+    },
+    {
+      "name": "flop",
+      "description": "Flip image horizontally (mirror over vertical axis)",
+      "params": []
+    },
+    {
+      "name": "enhance",
+      "description": "Auto-enhance image quality",
+      "params": []
+    },
+    {
+      "name": "monochrome",
+      "description": "Convert image to monochrome (grayscale)",
+      "params": []
+    },
+    {
+      "name": "sepia",
+      "description": "Apply sepia tone effect",
+      "params": [
+        { "name": "tone", "type": "number", "description": "Sepia tone intensity (0-100)" }
+      ]
+    },
+    {
+      "name": "output",
+      "description": "Convert output format",
+      "params": [
+        { "name": "format", "type": "string", "values": ["jpg", "png", "webp", "gif", "pdf", "svg"], "description": "Output format" },
+        { "name": "quality", "type": "number", "description": "Quality 1-100 (jpg/webp only)" }
+      ]
+    },
+    {
+      "name": "compress",
+      "description": "Compress image",
+      "params": [
+        { "name": "metadata", "type": "boolean", "description": "Preserve metadata" }
+      ]
+    },
+    {
+      "name": "crop_faces",
+      "description": "Detect faces and crop to them",
+      "params": [
+        { "name": "faces", "type": "number", "description": "Number of faces to detect (1-100 or all)" },
+        { "name": "buffer", "type": "number", "description": "Buffer percentage around detected face" }
+      ]
+    },
+    {
+      "name": "blur",
+      "description": "Blur image",
+      "params": [
+        { "name": "amount", "type": "number", "description": "Blur amount 1-20" }
+      ]
+    },
+    {
+      "name": "sharpen",
+      "description": "Sharpen image",
+      "params": [
+        { "name": "amount", "type": "number", "description": "Sharpen amount 1-20" }
+      ]
+    },
+    {
+      "name": "watermark",
+      "description": "Add a watermark image",
+      "params": [
+        { "name": "file", "type": "string", "description": "Handle of the watermark image" },
+        { "name": "size", "type": "number", "description": "Watermark size percentage" },
+        { "name": "position", "type": "array", "description": "Position as [vertical, horizontal] e.g. ['top','right']. Vertical: top/middle/bottom. Horizontal: left/center/right" }
+      ]
+    }
+  ]
+}
