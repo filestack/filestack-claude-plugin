@@ -1,0 +1,38 @@
+name: CI and Publish
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'mcp-v*'
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mcp/package-lock.json
+      - run: cd mcp && npm ci
+      - run: cd mcp && npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/mcp-v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - run: cd mcp && npm ci
+      - run: cd mcp && npm run build
+      - run: cd mcp && npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
