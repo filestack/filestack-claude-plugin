@@ -30,7 +30,7 @@ license: MIT
 curl -X POST https://api.filestackapi.com/webhooks/YOUR_APP_ID \
   -H "Content-Type: application/json" \
   -H "Filestack-API-Key: YOUR_API_KEY" \
-  -d '{ "url": "https://yourdomain.com/filestack-webhook", "events": ["fp.upload"] }'
+  -d '{ "url": "https://yourdomain.com/filestack-webhook", "webhook_type": "fp.upload" }'
 ```
 
 ## Webhook Payload Shape
@@ -127,6 +127,13 @@ def webhook():
 **Go**
 
 ```go
+import (
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/hex"
+    "fmt"
+)
+
 func verifySignature(body []byte, timestamp, signature, appSecret string) bool {
     // Filestack signs "{timestamp}.{body}"
     signPayload := fmt.Sprintf("%s.%s", timestamp, string(body))

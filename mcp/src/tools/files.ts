@@ -6,6 +6,15 @@ import { ToolResult, success, toolError, AUTH_ERROR } from '../types';
 const API_BASE = 'https://www.filestackapi.com/api';
 const STORE_BASE = 'https://www.filestackapi.com/api/store/S3';
 
+const HANDLE_RE = /^[a-zA-Z0-9_\-]+$/;
+
+function validateHandle(handle: string): string | null {
+  if (!handle || !HANDLE_RE.test(handle)) {
+    return 'Invalid file handle. Handles contain only alphanumeric characters, hyphens, and underscores.';
+  }
+  return null;
+}
+
 export interface FileResult {
   handle: string;
   url: string;
@@ -49,15 +58,22 @@ export async function filestackRetrieve(
   handle: string
 ): Promise<ToolResult<Record<string, unknown>>> {
   if (!hasApiKey()) return AUTH_ERROR;
+  const err = validateHandle(handle);
+  if (err) return toolError('invalid_input', err);
   const { apiKey } = getCredentials();
 
-  const res = await fetch(`${API_BASE}/file/${handle}/metadata?key=${apiKey}`);
-  if (!res.ok) {
-    const text = await res.text();
-    return toolError(res.status, text || res.statusText);
+  try {
+    const res = await fetch(`${API_BASE}/file/${handle}/metadata?key=${apiKey}`);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json() as Record<string, unknown>;
+    return success(data);
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return toolError(500, `Network error: ${e.message ?? 'Request failed'}`);
   }
-  const data = await res.json() as Record<string, unknown>;
-  return success(data);
 }
 
 export async function filestackDelete(
@@ -66,18 +82,25 @@ export async function filestackDelete(
   signature?: string
 ): Promise<ToolResult<{ status: string }>> {
   if (!hasApiKey()) return AUTH_ERROR;
+  const err = validateHandle(handle);
+  if (err) return toolError('invalid_input', err);
   const { apiKey } = getCredentials();
 
   let url = `${API_BASE}/file/${handle}?key=${apiKey}`;
-  if (policy) url += `&policy=${policy}`;
-  if (signature) url += `&signature=${signature}`;
+  if (policy) url += `&policy=${encodeURIComponent(policy)}`;
+  if (signature) url += `&signature=${encodeURIComponent(signature)}`;
 
-  const res = await fetch(url, { method: 'DELETE' });
-  if (!res.ok) {
-    const text = await res.text();
-    return toolError(res.status, text || res.statusText);
+  try {
+    const res = await fetch(url, { method: 'DELETE' });
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    return success({ status: 'ok' });
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return toolError(500, `Network error: ${e.message ?? 'Request failed'}`);
   }
-  return success({ status: 'ok' });
 }
 
 export async function filestackStoreUrl(
@@ -87,17 +110,22 @@ export async function filestackStoreUrl(
   if (!hasApiKey()) return AUTH_ERROR;
   const { apiKey } = getCredentials();
 
-  const body: Record<string, unknown> = { url: sourceUrl, ...storeOptions };
-  const res = await fetch(`${STORE_BASE}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  try {
+    const body: Record<string, unknown> = { url: sourceUrl, ...storeOptions };
+    const res = await fetch(`${STORE_BASE}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    return toolError(res.status, text || res.statusText);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json() as FileResult;
+    return success(data);
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return toolError(500, `Network error: ${e.message ?? 'Request failed'}`);
   }
-  const data = await res.json() as FileResult;
-  return success(data);
 }

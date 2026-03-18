@@ -55,6 +55,9 @@ const picker = client.picker({
   maxSize: 10 * 1024 * 1024, // 10 MB
 
   // Cloud sources (uses filestack-dialog OAuth)
+  // Available sources: local_file_system, url, imagesearch, webcam, video, audio,
+  // googledrive, dropbox, facebook, instagram, box, onedrive, onedriveforbusiness,
+  // gmail, github, googlephotos, unsplash, tint, customsource
   fromSources: ['local_file_system', 'googledrive', 'dropbox', 'url'],
 
   // Where to store uploaded files

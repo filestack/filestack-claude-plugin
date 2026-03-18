@@ -54,21 +54,26 @@ export async function filestackTransformApply(
   const handle = extractHandle(handleOrUrl);
   const segments = transforms.map(buildTransformSegment);
 
-  // Process API URL format: process.filestackapi.com/<apiKey>/<transforms>/store/<handle>
   const storeSegment = storeOptions
     ? `store=${Object.entries(storeOptions).map(([k, v]) => `${k}:${v}`).join(',')}`
     : 'store';
-  const res = await fetch(
-    `${PROCESS_BASE}/${apiKey}/${segments.join('/')}/${storeSegment}/${handle}`,
-    { method: 'GET' }
-  );
 
-  if (!res.ok) {
-    const text = await res.text();
-    return toolError(res.status, text || res.statusText);
+  try {
+    const res = await fetch(
+      `${PROCESS_BASE}/${apiKey}/${segments.join('/')}/${storeSegment}/${handle}`,
+      { method: 'GET' }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json() as { handle: string; url: string };
+    return success(data);
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return toolError(500, `Network error: ${e.message ?? 'Request failed'}`);
   }
-  const data = await res.json() as { handle: string; url: string };
-  return success(data);
 }
 
 export function filestackListTransforms(): ToolResult<typeof manifest.transforms> {

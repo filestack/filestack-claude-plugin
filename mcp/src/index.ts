@@ -15,6 +15,7 @@ import {
   filestackSignPolicy,
   filestackGenerateSignedUrl,
 } from './tools/security';
+import { toolError } from './types';
 
 const TOOLS: Tool[] = [
   {
@@ -163,43 +164,48 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }))
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  const a = args as Record<string, unknown>;
+  const a = (args ?? {}) as Record<string, unknown>;
 
   let result: unknown;
 
-  switch (name) {
-    case 'filestack_upload':
-      result = await filestackUpload(a.filePath as string, a.storeOptions as Record<string, unknown>);
-      break;
-    case 'filestack_retrieve':
-      result = await filestackRetrieve(a.handle as string);
-      break;
-    case 'filestack_delete':
-      result = await filestackDelete(a.handle as string, a.policy as string, a.signature as string);
-      break;
-    case 'filestack_store_url':
-      result = await filestackStoreUrl(a.sourceUrl as string, a.storeOptions as Record<string, unknown>);
-      break;
-    case 'filestack_transform_url':
-      result = filestackTransformUrl(a.handleOrUrl as string, a.transforms as Parameters<typeof filestackTransformUrl>[1]);
-      break;
-    case 'filestack_transform_apply':
-      result = await filestackTransformApply(a.handleOrUrl as string, a.transforms as Parameters<typeof filestackTransformApply>[1], a.storeOptions as Record<string, unknown>);
-      break;
-    case 'filestack_list_transforms':
-      result = filestackListTransforms();
-      break;
-    case 'filestack_generate_policy':
-      result = filestackGeneratePolicy(a as unknown as Parameters<typeof filestackGeneratePolicy>[0]);
-      break;
-    case 'filestack_sign_policy':
-      result = filestackSignPolicy(a.policy as string);
-      break;
-    case 'filestack_generate_signed_url':
-      result = filestackGenerateSignedUrl(a.handle as string, a as unknown as Parameters<typeof filestackGenerateSignedUrl>[1]);
-      break;
-    default:
-      result = { result: null, error: { code: 'unknown_tool', message: `Unknown tool: ${name}` } };
+  try {
+    switch (name) {
+      case 'filestack_upload':
+        result = await filestackUpload(a.filePath as string, a.storeOptions as Record<string, unknown>);
+        break;
+      case 'filestack_retrieve':
+        result = await filestackRetrieve(a.handle as string);
+        break;
+      case 'filestack_delete':
+        result = await filestackDelete(a.handle as string, a.policy as string, a.signature as string);
+        break;
+      case 'filestack_store_url':
+        result = await filestackStoreUrl(a.sourceUrl as string, a.storeOptions as Record<string, unknown>);
+        break;
+      case 'filestack_transform_url':
+        result = filestackTransformUrl(a.handleOrUrl as string, a.transforms as Parameters<typeof filestackTransformUrl>[1]);
+        break;
+      case 'filestack_transform_apply':
+        result = await filestackTransformApply(a.handleOrUrl as string, a.transforms as Parameters<typeof filestackTransformApply>[1], a.storeOptions as Record<string, unknown>);
+        break;
+      case 'filestack_list_transforms':
+        result = filestackListTransforms();
+        break;
+      case 'filestack_generate_policy':
+        result = filestackGeneratePolicy(a as unknown as Parameters<typeof filestackGeneratePolicy>[0]);
+        break;
+      case 'filestack_sign_policy':
+        result = filestackSignPolicy(a.policy as string);
+        break;
+      case 'filestack_generate_signed_url':
+        result = filestackGenerateSignedUrl(a.handle as string, a as unknown as Parameters<typeof filestackGenerateSignedUrl>[1]);
+        break;
+      default:
+        result = toolError('unknown_tool', `Unknown tool: ${name}`);
+    }
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    result = toolError('internal', e.message ?? 'Unexpected error');
   }
 
   return {

@@ -2,12 +2,23 @@
   "name": "@filestack/mcp",
   "version": "1.0.0",
   "description": "Filestack MCP server — exposes Filestack API as Claude Code tools",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filestack/filestack-claude-plugin"
+  },
+  "keywords": ["filestack", "mcp", "claude-code", "file-upload", "cdn"],
+  "author": {
+    "name": "Filestack",
+    "email": "support@filestack.com"
+  },
   "main": "dist/index.js",
   "bin": {
     "filestack-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "postbuild": "chmod +x dist/index.js",
     "test": "jest",
     "test:integration": "FILESTACK_INTEGRATION=1 jest tests/integration",
     "prepublishOnly": "npm run build && npm test"
