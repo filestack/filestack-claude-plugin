@@ -1,0 +1,15 @@
+{
+  "name": "filestack-plugin",
+  "owner": {
+    "name": "Filestack",
+    "email": "support@filestack.com"
+  },
+  "plugins": [
+    {
+      "name": "filestack-claude-plugin",
+      "source": "./",
+      "description": "Official Filestack plugin — upload files, build transformations, and generate security policies directly from Claude Code.",
+      "version": "1.0.0"
+    }
+  ]
+}
