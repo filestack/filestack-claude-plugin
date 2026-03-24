@@ -1,5 +1,5 @@
 ---
-name: sdk-integration
+name: filestack-sdk-integration
 description: >
   Use when the user is working with Filestack SDK or API. Activates on:
   import tokens (filestack-js, filestack-loader, loadModule, from filestack import, filestack.Client),

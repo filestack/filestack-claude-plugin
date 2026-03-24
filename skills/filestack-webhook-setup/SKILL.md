@@ -1,5 +1,5 @@
 ---
-name: webhook-setup
+name: filestack-webhook-setup
 description: >
   Use when user is setting up Filestack webhook endpoints. Activates on:
   FS-Signature, FS-Timestamp, fp.upload, fp.converse, fp.delete,

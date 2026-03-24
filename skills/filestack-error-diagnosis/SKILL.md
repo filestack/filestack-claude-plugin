@@ -1,5 +1,5 @@
 ---
-name: error-diagnosis
+name: filestack-error-diagnosis
 description: >
   Use when user encounters Filestack API errors. Activates on:
   domain tokens (filestackapi.com, filestackcontent.com, process.filestackapi.com),
