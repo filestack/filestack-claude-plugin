@@ -9,7 +9,7 @@
       "name": "filestack-claude-plugin",
       "source": "./",
       "description": "Official Filestack plugin — upload files, build transformations, and generate security policies directly from Claude Code.",
-      "version": "1.0.0"
+      "version": "1.1.0"
     }
   ]
 }

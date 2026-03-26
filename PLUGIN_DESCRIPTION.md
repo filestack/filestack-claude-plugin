@@ -1,4 +1,4 @@
-# Filestack Plugin for Claude Code
+# Filestack Plugin for Claude Code & Cursor
 
 **Repository:** https://github.com/filestack/filestack-claude-plugin
 **Publisher:** Filestack (https://www.filestack.com)
@@ -8,9 +8,11 @@
 
 ## What It Does
 
-The Filestack plugin gives Claude Code native access to the Filestack file handling platform. Developers can upload files, build image/video transformation pipelines, generate security policies, and debug integration issues — all through natural language conversation without leaving the terminal.
+The Filestack plugin gives Claude Code and Cursor native access to the Filestack file handling platform. Developers can upload files, build image/video transformation pipelines, generate security policies, and debug integration issues — all through natural language conversation without leaving their editor.
 
-Filestack handles file infrastructure for thousands of applications: uploads, cloud source ingestion (Google Drive, Dropbox, etc.), on-the-fly image/video/document processing via CDN, and policy-based security. This plugin bridges that platform directly into the Claude Code workflow.
+Filestack handles file infrastructure for thousands of applications: uploads, cloud source ingestion (Google Drive, Dropbox, etc.), on-the-fly image/video/document processing via CDN, and policy-based security. This plugin bridges that platform directly into your coding agent workflow.
+
+**Authentication:** On first use, you'll be prompted to log in with your Filestack account via OAuth2. No API keys to copy, no environment variables to configure — just approve the login and start using the tools.
 
 ---
 
@@ -127,16 +129,12 @@ Claude uses `filestack_store_url` for each URL to ingest them into Filestack, re
 
 ## Installation
 
-```
+```text
 /plugin marketplace add https://github.com/filestack/filestack-claude-plugin.git
 /plugin install filestack-claude-plugin@filestack-plugin
 ```
 
-Set environment variables:
-```bash
-export FILESTACK_API_KEY=your_api_key
-export FILESTACK_APP_SECRET=your_app_secret  # only needed for security tools
-```
+On first use, approve the OAuth2 login prompt to connect your Filestack account. No API keys or environment variables needed.
 
 ---
 
@@ -150,9 +148,9 @@ This plugin makes that API conversational. Instead of reading docs to figure out
 
 ## Technical Details
 
-- **MCP server:** TypeScript, runs via `npx -y @filestack/mcp@latest`
-- **Protocol:** Stdio transport (standard MCP)
-- **Auth:** API key + optional app secret via environment variables
+- **Platforms:** Claude Code and Cursor
+- **Auth:** OAuth2 via Filestack-hosted MCP servers (default); environment variables for local mode
+- **MCP servers:** Three remote servers (`filestack-files`, `filestack-transforms`, `filestack-security`) with OAuth2
+- **Local mode:** TypeScript MCP server via `npx -y @filestack/mcp@latest` with stdio transport
 - **Dependencies:** `@modelcontextprotocol/sdk`, `filestack-js`, `node-fetch`
 - **No state:** All tools are stateless; no local database or cache
-- **Security:** App secret never leaves the local machine — signing happens locally via HMAC-SHA256

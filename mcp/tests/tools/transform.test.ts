@@ -1,5 +1,6 @@
 import nock from 'nock';
 import { filestackTransformUrl, filestackTransformApply, filestackListTransforms } from '../../src/tools/transform';
+import { PLACEHOLDER_API_KEY } from '../../src/auth';
 
 const TEST_KEY = 'testApiKey123';
 
@@ -93,11 +94,15 @@ describe('transform tools', () => {
       expect((result.result as { handle: string })?.handle).toBe('newHandle');
     });
 
-    it('returns auth error when FILESTACK_API_KEY is missing', async () => {
+    it('falls back to placeholder key when FILESTACK_API_KEY is not set', async () => {
       delete process.env.FILESTACK_API_KEY;
+      nock('https://process.filestackapi.com')
+        .get(new RegExp(`${PLACEHOLDER_API_KEY}\\/resize\\/store\\/abc123`))
+        .reply(200, { handle: 'newHandle', url: 'https://cdn.filestackcontent.com/newHandle' });
+
       const result = await filestackTransformApply('abc123', [{ operation: 'resize' }]);
-      expect(result.result).toBeNull();
-      expect(result.error?.code).toBe('auth_required');
+      expect(result.error).toBeNull();
+      expect((result.result as { handle: string })?.handle).toBe('newHandle');
     });
   });
 });

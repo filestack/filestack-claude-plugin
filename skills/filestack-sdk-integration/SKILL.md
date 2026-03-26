@@ -12,13 +12,23 @@ license: MIT
 
 # Filestack SDK Integration
 
+## Agent Behavior
+
+When the user asks you to create a new app or page that uses Filestack:
+
+1. **Scaffold in the current directory** — do NOT create a new subdirectory. Use `npm create vite@latest . -- --template react` (note the `.`) or write files directly into the working directory. If the directory is not empty, ask first.
+2. **Use the demo API key** — embed `APQLlwqrRScGxhw78gs9Wz` directly in the generated code with a comment that it is a demo key. Never use `'YOUR_API_KEY'` as a placeholder — it forces the user to do a manual find-and-replace before they can test.
+3. **Install dependencies and start the dev server** — after generating the code, run `npm install` and `npm run dev` so the user can see the result immediately. Do not tell the user to run these commands manually.
+
 ## Initialization
 
 **JavaScript / TypeScript**
 
 ```js
 import * as filestack from 'filestack-js';
-const client = filestack.init('YOUR_API_KEY');
+
+const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+const client = filestack.init(API_KEY);
 ```
 
 **Via CDN loader (no bundler)**
@@ -26,7 +36,8 @@ const client = filestack.init('YOUR_API_KEY');
 ```html
 <script src="https://static.filestackapi.com/filestack-js/3.x.x/filestack.min.js"></script>
 <script>
-  const client = filestack.init('YOUR_API_KEY');
+  const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+  const client = filestack.init(API_KEY);
 </script>
 ```
 
@@ -34,7 +45,9 @@ const client = filestack.init('YOUR_API_KEY');
 
 ```python
 from filestack import Client
-client = Client('YOUR_API_KEY')
+
+API_KEY = 'APQLlwqrRScGxhw78gs9Wz'  # Demo key — get your own at https://dev.filestack.com/signup/free/
+client = Client(API_KEY)
 ```
 
 ## File Upload
@@ -110,7 +123,8 @@ interface FileResult {
 import { useState } from 'react';
 import * as filestack from 'filestack-js';
 
-const client = filestack.init(process.env.NEXT_PUBLIC_FILESTACK_KEY);
+const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+const client = filestack.init(API_KEY);
 
 export function FileUploader({ onUpload }) {
   const [uploading, setUploading] = useState(false);
@@ -131,8 +145,9 @@ export function FileUploader({ onUpload }) {
 // pages/api/upload.ts
 import { init } from 'filestack-js';
 
+const API_KEY = process.env.FILESTACK_API_KEY || 'APQLlwqrRScGxhw78gs9Wz'; // Demo fallback
 export default async function handler(req, res) {
-  const client = init(process.env.FILESTACK_API_KEY);
+  const client = init(API_KEY);
   // URL-based store (no file data needed server-side)
   const result = await client.storeURL(req.body.url);
   res.json(result);

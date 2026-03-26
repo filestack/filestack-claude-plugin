@@ -30,3 +30,10 @@ export const SECRET_ERROR = toolError(
   'auth_required',
   'FILESTACK_APP_SECRET is not set. Add it to your environment: export FILESTACK_APP_SECRET=your_secret'
 );
+
+export const PLACEHOLDER_WARNING =
+  '⚠️  WARNING: You are using a placeholder API key (APQLlwqrRScGxhw78gs9Wz). ' +
+  'This key has limited functionality and is for demo purposes only. ' +
+  'To use the full Filestack platform, sign up for your own API key at: ' +
+  'https://dev.filestack.com/signup/free/ ' +
+  'Then set it with: export FILESTACK_API_KEY=your_api_key';

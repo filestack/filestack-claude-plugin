@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "filestack-files": {
+      "url": "https://mcp.filestack.com/files/mcp"
+    },
+    "filestack-transforms": {
+      "url": "https://mcp.filestack.com/transforms/mcp"
+    },
+    "filestack-security": {
+      "url": "https://mcp.filestack.com/security/mcp"
+    }
+  }
+}

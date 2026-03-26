@@ -108,11 +108,13 @@ describe('security tools', () => {
       expect(r.signedUrl).toContain(`apikey=${TEST_KEY}`);
     });
 
-    it('returns auth error when FILESTACK_API_KEY is missing', () => {
+    it('falls back to placeholder key when FILESTACK_API_KEY is not set', () => {
       delete process.env.FILESTACK_API_KEY;
       const result = filestackGenerateSignedUrl('abc123', { call: 'read', expiry: FUTURE_EXPIRY });
-      expect(result.result).toBeNull();
-      expect(result.error?.code).toBe('auth_required');
+      expect(result.error).toBeNull();
+      const r = result.result!;
+      expect(r.signedUrl).toContain('abc123');
+      expect(r.signedUrl).toContain('apikey=APQLlwqrRScGxhw78gs9Wz');
     });
 
     it('returns secret error when FILESTACK_APP_SECRET is missing', () => {

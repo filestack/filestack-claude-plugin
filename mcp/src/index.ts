@@ -15,7 +15,8 @@ import {
   filestackSignPolicy,
   filestackGenerateSignedUrl,
 } from './tools/security';
-import { toolError } from './types';
+import { toolError, PLACEHOLDER_WARNING } from './types';
+import { isPlaceholderKey } from './auth';
 
 const TOOLS: Tool[] = [
   {
@@ -208,9 +209,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     result = toolError('internal', e.message ?? 'Unexpected error');
   }
 
-  return {
-    content: [{ type: 'text', text: JSON.stringify(result) }],
-  };
+  const content: Array<{ type: 'text'; text: string }> = [];
+
+  if (isPlaceholderKey()) {
+    content.push({ type: 'text', text: PLACEHOLDER_WARNING });
+  }
+
+  content.push({ type: 'text', text: JSON.stringify(result) });
+
+  return { content };
 });
 
 async function main() {

@@ -1,4 +1,4 @@
-import { getCredentials, hasApiKey, hasAppSecret } from '../src/auth';
+import { getCredentials, hasApiKey, hasAppSecret, isPlaceholderKey, PLACEHOLDER_API_KEY } from '../src/auth';
 
 describe('auth', () => {
   const originalEnv = process.env;
@@ -14,8 +14,8 @@ describe('auth', () => {
   });
 
   describe('hasApiKey', () => {
-    it('returns false when FILESTACK_API_KEY is not set', () => {
-      expect(hasApiKey()).toBe(false);
+    it('returns true even when FILESTACK_API_KEY is not set (placeholder fallback)', () => {
+      expect(hasApiKey()).toBe(true);
     });
 
     it('returns true when FILESTACK_API_KEY is set', () => {
@@ -35,10 +35,26 @@ describe('auth', () => {
     });
   });
 
+  describe('isPlaceholderKey', () => {
+    it('returns true when FILESTACK_API_KEY is not set', () => {
+      expect(isPlaceholderKey()).toBe(true);
+    });
+
+    it('returns true when FILESTACK_API_KEY equals the placeholder', () => {
+      process.env.FILESTACK_API_KEY = PLACEHOLDER_API_KEY;
+      expect(isPlaceholderKey()).toBe(true);
+    });
+
+    it('returns false when FILESTACK_API_KEY is a real key', () => {
+      process.env.FILESTACK_API_KEY = 'real_key';
+      expect(isPlaceholderKey()).toBe(false);
+    });
+  });
+
   describe('getCredentials', () => {
-    it('returns empty apiKey and null appSecret when env vars not set', () => {
+    it('returns placeholder apiKey and null appSecret when env vars not set', () => {
       const creds = getCredentials();
-      expect(creds.apiKey).toBe('');
+      expect(creds.apiKey).toBe(PLACEHOLDER_API_KEY);
       expect(creds.appSecret).toBeNull();
     });
 

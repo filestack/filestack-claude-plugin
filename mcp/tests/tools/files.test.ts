@@ -1,5 +1,6 @@
 import nock from 'nock';
 import { filestackRetrieve, filestackDelete, filestackStoreUrl } from '../../src/tools/files';
+import { PLACEHOLDER_API_KEY } from '../../src/auth';
 
 const TEST_KEY = 'testApiKey123';
 const TEST_HANDLE = 'abc123XYZ';
@@ -30,11 +31,17 @@ describe('file tools', () => {
       expect(result.result).toMatchObject(metadata);
     });
 
-    it('returns auth error when FILESTACK_API_KEY is missing', async () => {
+    it('falls back to placeholder key when FILESTACK_API_KEY is not set', async () => {
       delete process.env.FILESTACK_API_KEY;
+      const metadata = { filename: 'test.jpg', size: 512, type: 'image/jpeg' };
+      nock('https://www.filestackapi.com')
+        .get(`/api/file/${TEST_HANDLE}/metadata`)
+        .query({ key: PLACEHOLDER_API_KEY })
+        .reply(200, metadata);
+
       const result = await filestackRetrieve(TEST_HANDLE);
-      expect(result.result).toBeNull();
-      expect(result.error?.code).toBe('auth_required');
+      expect(result.error).toBeNull();
+      expect(result.result).toMatchObject(metadata);
     });
 
     it('returns error on 404', async () => {
@@ -107,11 +114,17 @@ describe('file tools', () => {
       expect((result.result as { handle: string })?.handle).toBe('newHandle');
     });
 
-    it('returns auth error when FILESTACK_API_KEY is missing', async () => {
+    it('falls back to placeholder key when FILESTACK_API_KEY is not set', async () => {
       delete process.env.FILESTACK_API_KEY;
+      const fileResult = { handle: 'placeholderHandle', url: 'https://cdn.filestackcontent.com/placeholderHandle', filename: 'image.jpg' };
+      nock('https://www.filestackapi.com')
+        .post('/api/store/S3')
+        .query({ key: PLACEHOLDER_API_KEY })
+        .reply(200, fileResult);
+
       const result = await filestackStoreUrl('https://example.com/image.jpg');
-      expect(result.result).toBeNull();
-      expect(result.error?.code).toBe('auth_required');
+      expect(result.error).toBeNull();
+      expect((result.result as { handle: string })?.handle).toBe('placeholderHandle');
     });
   });
 });

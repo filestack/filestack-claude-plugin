@@ -1,15 +1,16 @@
-# Filestack Plugin for Claude Code
+# Filestack Plugin for Claude Code & Cursor
 
-Official [Claude Code](https://claude.com/claude-code) plugin for [Filestack](https://www.filestack.com) — the file handling platform-as-a-service for uploads, cloud source ingestion, on-the-fly image/video/document processing, CDN delivery, and policy-based security.
+Official [Filestack](https://www.filestack.com) plugin for [Claude Code](https://claude.com/claude-code) and [Cursor](https://cursor.com) — the file handling platform-as-a-service for uploads, cloud source ingestion, on-the-fly image/video/document processing, CDN delivery, and policy-based security.
 
-This plugin brings the full Filestack platform into Claude Code through 10 MCP tools, 3 context-aware skills, and a natural language slash command. Upload files, build transformation pipelines, generate signed security policies, set up webhooks, and debug API errors — all through conversation without leaving the terminal.
+This plugin brings the full Filestack platform into your coding agent through 10 MCP tools, 3 context-aware skills, and a natural language slash command. Upload files, build transformation pipelines, generate signed security policies, set up webhooks, and debug API errors — all through conversation without leaving the terminal.
 
 ---
 
 ## Table of Contents
 
+- [Supported Platforms](#supported-platforms)
 - [Installation](#installation)
-- [Configuration](#configuration)
+- [Authentication](#authentication)
 - [MCP Tools](#mcp-tools)
   - [File Operations](#file-operations)
   - [Transformations](#transformations)
@@ -21,44 +22,53 @@ This plugin brings the full Filestack platform into Claude Code through 10 MCP t
 - [Slash Command](#slash-command)
 - [Examples](#examples)
 - [Available Transformations](#available-transformations)
-- [Remote MCP (Optional)](#remote-mcp-optional)
+- [Local MCP Server (Advanced)](#local-mcp-server-advanced)
 - [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
 - [License](#license)
 
 ---
 
+## Supported Platforms
+
+This plugin works with both **Claude Code** and **Cursor**. Install it from either marketplace and the correct configuration is detected automatically.
+
+| Platform | Manifest | Auth |
+|----------|----------|------|
+| Claude Code | `.claude-plugin/plugin.json` | OAuth2 (automatic) |
+| Cursor | `.cursor-plugin/plugin.json` | OAuth2 (automatic) |
+
 ## Installation
 
 **From marketplace (recommended):**
 
-```
+```text
 /plugin marketplace add https://github.com/filestack/filestack-claude-plugin.git
 /plugin install filestack-claude-plugin@filestack-plugin
 ```
 
-**Manual:**
+On first use, you'll be prompted to log in with your Filestack account. Approve the OAuth2 prompt and all MCP tools become available immediately — no API keys to copy, no environment variables to set.
 
-```bash
-git clone https://github.com/filestack/filestack-claude-plugin.git
-cd filestack-claude-plugin/mcp && npm install && npm run build
-```
+> **Don't have a Filestack account yet?**
+> **Sign up free at <https://dev.filestack.com/signup/free/>**
 
-## Configuration
+## Authentication
 
-Set these environment variables before starting Claude Code:
+### OAuth2 (Default)
 
-```bash
-export FILESTACK_API_KEY=your_api_key
-export FILESTACK_APP_SECRET=your_app_secret  # only needed for security tools
-```
+The plugin connects to three Filestack-hosted MCP servers. Authentication is handled via OAuth2 — you log in once through your browser and the session is managed by your editor.
 
-You can find your API key and app secret in the [Filestack Developer Portal](https://dev.filestack.com/).
+| MCP Server | Tools | Auth |
+|------------|-------|------|
+| `filestack-files` | upload, retrieve, delete, store_url | OAuth2 |
+| `filestack-transforms` | transform_url, transform_apply, list_transforms | OAuth2 |
+| `filestack-security` | generate_policy, sign_policy, generate_signed_url | OAuth2 |
 
-| Variable | Required | Used by |
-|----------|----------|---------|
-| `FILESTACK_API_KEY` | Yes | All file operation and transformation tools |
-| `FILESTACK_APP_SECRET` | Only for security tools | `filestack_sign_policy`, `filestack_generate_signed_url` |
+No credentials are stored in the plugin. The OAuth2 flow is handled entirely by the Claude Code or Cursor runtime.
+
+### Environment Variables (Alternative)
+
+If you prefer to run the MCP server locally instead of using the remote OAuth2 servers, you can use the `.mcp.json` configuration with environment variables. See [Local MCP Server (Advanced)](#local-mcp-server-advanced) for details.
 
 ---
 
@@ -390,19 +400,38 @@ Transforms are chained left-to-right in the CDN URL. Put processing operations (
 
 ---
 
-## Remote MCP (Optional)
+## Local MCP Server (Advanced)
 
-If you prefer to run the MCP server remotely instead of locally, replace `.mcp.json` with:
+If you prefer to run the MCP server locally instead of using the remote OAuth2 servers — for example, for offline use, local-only policy signing, or development — use the `.mcp.json` configuration:
 
 ```json
 {
   "filestack": {
-    "type": "http",
-    "url": "https://mcp.filestack.com/mcp",
-    "headers": { "Authorization": "Bearer ${FILESTACK_API_KEY}" }
+    "command": "npx",
+    "args": ["-y", "@filestack/mcp@latest"],
+    "env": {
+      "FILESTACK_API_KEY": "${FILESTACK_API_KEY}",
+      "FILESTACK_APP_SECRET": "${FILESTACK_APP_SECRET}"
+    }
   }
 }
 ```
+
+Set these environment variables before starting your editor:
+
+```bash
+export FILESTACK_API_KEY=your_api_key
+export FILESTACK_APP_SECRET=your_app_secret  # only needed for security tools
+```
+
+You can find your API key and app secret in the [Filestack Developer Portal](https://dev.filestack.com/).
+
+| Variable | Required | Used by |
+|----------|----------|---------|
+| `FILESTACK_API_KEY` | Yes | All file operation and transformation tools |
+| `FILESTACK_APP_SECRET` | Only for security tools | `filestack_sign_policy`, `filestack_generate_signed_url` |
+
+The local server runs via Node.js on your machine. Policy signing happens locally — your app secret never leaves your machine.
 
 ---
 
@@ -410,11 +439,13 @@ If you prefer to run the MCP server remotely instead of locally, replace `.mcp.j
 
 | Problem | Solution |
 |---------|----------|
-| Tools return "API key not configured" | Set `FILESTACK_API_KEY` environment variable and restart Claude Code |
-| Security tools return "App secret not configured" | Set `FILESTACK_APP_SECRET` environment variable and restart Claude Code |
-| Skills not appearing after install | Restart Claude Code — skills load at session start |
+| OAuth2 login prompt not appearing | Restart your editor and try using a Filestack tool — the login prompt appears on first use |
+| OAuth2 login succeeds but tools fail | Your Filestack account may not have the required permissions — check the [Developer Portal](https://dev.filestack.com/) |
+| Tools return "API key not configured" (local mode) | Set `FILESTACK_API_KEY` environment variable and restart your editor |
+| Security tools return "App secret not configured" (local mode) | Set `FILESTACK_APP_SECRET` environment variable and restart your editor |
+| Skills not appearing after install | Restart your editor — skills load at session start |
 | `filestack_upload` fails for local files | Ensure the file path is absolute or relative to the working directory |
-| `filestack_transform_apply` returns 403 | Your API key may not have processing permissions — check the Filestack Developer Portal |
+| `filestack_transform_apply` returns 403 | Your account may not have processing permissions — check the Filestack Developer Portal |
 | Signed URLs return 403 | Verify the policy hasn't expired and includes the correct `call` scope for the operation |
 
 ---
