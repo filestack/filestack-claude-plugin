@@ -10,6 +10,5 @@
   "repository": "https://github.com/filestack/filestack-claude-plugin",
   "license": "MIT",
   "keywords": ["filestack", "file-upload", "cdn", "image-transformation", "storage", "security", "mcp"],
-  "skills": "./skills/",
-  "mcpServers": "./mcp.json"
+  "skills": "./skills/"
 }

@@ -10,7 +10,7 @@ This plugin brings the full Filestack platform into your coding agent through 10
 
 - [Supported Platforms](#supported-platforms)
 - [Installation](#installation)
-- [Authentication](#authentication)
+- [Configuration](#configuration)
 - [MCP Tools](#mcp-tools)
   - [File Operations](#file-operations)
   - [Transformations](#transformations)
@@ -22,7 +22,6 @@ This plugin brings the full Filestack platform into your coding agent through 10
 - [Slash Command](#slash-command)
 - [Examples](#examples)
 - [Available Transformations](#available-transformations)
-- [Local MCP Server (Advanced)](#local-mcp-server-advanced)
 - [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
 - [License](#license)
@@ -33,10 +32,10 @@ This plugin brings the full Filestack platform into your coding agent through 10
 
 This plugin works with both **Claude Code** and **Cursor**. Install it from either marketplace and the correct configuration is detected automatically.
 
-| Platform | Manifest | Auth |
-|----------|----------|------|
-| Claude Code | `.claude-plugin/plugin.json` | OAuth2 (automatic) |
-| Cursor | `.cursor-plugin/plugin.json` | OAuth2 (automatic) |
+| Platform | Manifest |
+|----------|----------|
+| Claude Code | `.claude-plugin/plugin.json` |
+| Cursor | `.cursor-plugin/plugin.json` |
 
 ## Installation
 
@@ -47,28 +46,28 @@ This plugin works with both **Claude Code** and **Cursor**. Install it from eith
 /plugin install filestack-claude-plugin@filestack-plugin
 ```
 
-On first use, you'll be prompted to log in with your Filestack account. Approve the OAuth2 prompt and all MCP tools become available immediately — no API keys to copy, no environment variables to set.
+The plugin works immediately with a built-in demo API key. For full access to your own Filestack account, set your API key (see [Configuration](#configuration)).
 
 > **Don't have a Filestack account yet?**
 > **Sign up free at <https://dev.filestack.com/signup/free/>**
 
-## Authentication
+## Configuration
 
-### OAuth2 (Default)
+The plugin runs a local MCP server and works out of the box with a demo API key (`APQLlwqrRScGxhw78gs9Wz`). To use your own Filestack account, set your API key as an environment variable before starting your editor:
 
-The plugin connects to three Filestack-hosted MCP servers. Authentication is handled via OAuth2 — you log in once through your browser and the session is managed by your editor.
+```bash
+export FILESTACK_API_KEY=your_api_key
+export FILESTACK_APP_SECRET=your_app_secret  # only needed for security tools
+```
 
-| MCP Server | Tools | Auth |
-|------------|-------|------|
-| `filestack-files` | upload, retrieve, delete, store_url | OAuth2 |
-| `filestack-transforms` | transform_url, transform_apply, list_transforms | OAuth2 |
-| `filestack-security` | generate_policy, sign_policy, generate_signed_url | OAuth2 |
+You can find your API key and app secret in the [Filestack Developer Portal](https://dev.filestack.com/).
 
-No credentials are stored in the plugin. The OAuth2 flow is handled entirely by the Claude Code or Cursor runtime.
+| Variable | Required | Used by |
+|----------|----------|---------|
+| `FILESTACK_API_KEY` | No (demo key used if unset) | All file operation and transformation tools |
+| `FILESTACK_APP_SECRET` | Only for security tools | `filestack_sign_policy`, `filestack_generate_signed_url` |
 
-### Environment Variables (Alternative)
-
-If you prefer to run the MCP server locally instead of using the remote OAuth2 servers, you can use the `.mcp.json` configuration with environment variables. See [Local MCP Server (Advanced)](#local-mcp-server-advanced) for details.
+The MCP server runs locally via Node.js. Policy signing happens on your machine — your app secret never leaves your environment.
 
 ---
 
@@ -400,49 +399,12 @@ Transforms are chained left-to-right in the CDN URL. Put processing operations (
 
 ---
 
-## Local MCP Server (Advanced)
-
-If you prefer to run the MCP server locally instead of using the remote OAuth2 servers — for example, for offline use, local-only policy signing, or development — use the `.mcp.json` configuration:
-
-```json
-{
-  "filestack": {
-    "command": "npx",
-    "args": ["-y", "@filestack/mcp@latest"],
-    "env": {
-      "FILESTACK_API_KEY": "${FILESTACK_API_KEY}",
-      "FILESTACK_APP_SECRET": "${FILESTACK_APP_SECRET}"
-    }
-  }
-}
-```
-
-Set these environment variables before starting your editor:
-
-```bash
-export FILESTACK_API_KEY=your_api_key
-export FILESTACK_APP_SECRET=your_app_secret  # only needed for security tools
-```
-
-You can find your API key and app secret in the [Filestack Developer Portal](https://dev.filestack.com/).
-
-| Variable | Required | Used by |
-|----------|----------|---------|
-| `FILESTACK_API_KEY` | Yes | All file operation and transformation tools |
-| `FILESTACK_APP_SECRET` | Only for security tools | `filestack_sign_policy`, `filestack_generate_signed_url` |
-
-The local server runs via Node.js on your machine. Policy signing happens locally — your app secret never leaves your machine.
-
----
-
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| OAuth2 login prompt not appearing | Restart your editor and try using a Filestack tool — the login prompt appears on first use |
-| OAuth2 login succeeds but tools fail | Your Filestack account may not have the required permissions — check the [Developer Portal](https://dev.filestack.com/) |
-| Tools return "API key not configured" (local mode) | Set `FILESTACK_API_KEY` environment variable and restart your editor |
-| Security tools return "App secret not configured" (local mode) | Set `FILESTACK_APP_SECRET` environment variable and restart your editor |
+| Tools return placeholder key warning | Set `FILESTACK_API_KEY` environment variable and restart your editor |
+| Security tools return "App secret not configured" | Set `FILESTACK_APP_SECRET` environment variable and restart your editor |
 | Skills not appearing after install | Restart your editor — skills load at session start |
 | `filestack_upload` fails for local files | Ensure the file path is absolute or relative to the working directory |
 | `filestack_transform_apply` returns 403 | Your account may not have processing permissions — check the Filestack Developer Portal |

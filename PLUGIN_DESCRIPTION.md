@@ -12,7 +12,7 @@ The Filestack plugin gives Claude Code and Cursor native access to the Filestack
 
 Filestack handles file infrastructure for thousands of applications: uploads, cloud source ingestion (Google Drive, Dropbox, etc.), on-the-fly image/video/document processing via CDN, and policy-based security. This plugin bridges that platform directly into your coding agent workflow.
 
-**Authentication:** On first use, you'll be prompted to log in with your Filestack account via OAuth2. No API keys to copy, no environment variables to configure — just approve the login and start using the tools.
+**Authentication:** Works out of the box with a built-in demo API key. For full access, set your `FILESTACK_API_KEY` environment variable — find it in the [Filestack Developer Portal](https://dev.filestack.com/).
 
 ---
 
@@ -134,7 +134,7 @@ Claude uses `filestack_store_url` for each URL to ingest them into Filestack, re
 /plugin install filestack-claude-plugin@filestack-plugin
 ```
 
-On first use, approve the OAuth2 login prompt to connect your Filestack account. No API keys or environment variables needed.
+The plugin works immediately with a built-in demo key. For full access, set `FILESTACK_API_KEY` before starting your editor.
 
 ---
 
@@ -149,8 +149,7 @@ This plugin makes that API conversational. Instead of reading docs to figure out
 ## Technical Details
 
 - **Platforms:** Claude Code and Cursor
-- **Auth:** OAuth2 via Filestack-hosted MCP servers (default); environment variables for local mode
-- **MCP servers:** Three remote servers (`filestack-files`, `filestack-transforms`, `filestack-security`) with OAuth2
-- **Local mode:** TypeScript MCP server via `npx -y @filestack/mcp@latest` with stdio transport
+- **Auth:** API key via environment variable (demo key fallback for instant use)
+- **MCP server:** Local TypeScript server via `npx -y @filestack/mcp@latest` with stdio transport
 - **Dependencies:** `@modelcontextprotocol/sdk`, `filestack-js`, `node-fetch`
 - **No state:** All tools are stateless; no local database or cache
