@@ -1,7 +1,7 @@
 {
   "filestack": {
-    "command": "npx",
-    "args": ["-y", "@filestack/mcp@latest"],
+    "command": "node",
+    "args": ["mcp/dist/bundle.js"],
     "env": {
       "FILESTACK_API_KEY": "${FILESTACK_API_KEY:-APQLlwqrRScGxhw78gs9Wz}",
       "FILESTACK_APP_SECRET": "${FILESTACK_APP_SECRET}"

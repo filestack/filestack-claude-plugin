@@ -1,5 +1,6 @@
 node_modules/
-dist/
+mcp/dist/
+!mcp/dist/bundle.js
 .env
 .env.*
 .DS_Store

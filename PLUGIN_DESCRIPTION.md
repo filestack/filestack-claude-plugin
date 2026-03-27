@@ -150,6 +150,6 @@ This plugin makes that API conversational. Instead of reading docs to figure out
 
 - **Platforms:** Claude Code and Cursor
 - **Auth:** API key via environment variable (demo key fallback for instant use)
-- **MCP server:** Local TypeScript server via `npx -y @filestack/mcp@latest` with stdio transport
+- **MCP server:** Bundled local server (`mcp/dist/bundle.js`) via stdio transport — no npm install needed
 - **Dependencies:** `@modelcontextprotocol/sdk`, `filestack-js`, `node-fetch`
 - **No state:** All tools are stateless; no local database or cache
