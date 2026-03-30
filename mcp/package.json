@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsc",
     "postbuild": "chmod +x dist/index.js",
+    "bundle": "esbuild src/index.ts --bundle --platform=node --target=node18 --outfile=dist/bundle.js --external:filestack-js",
     "test": "jest",
     "test:integration": "FILESTACK_INTEGRATION=1 jest tests/integration",
     "prepublishOnly": "npm run build && npm test"
