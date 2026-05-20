@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { getCredentials, hasApiKey } from '../auth';
 import { ToolResult, success, toolError, AUTH_ERROR } from '../types';
 
@@ -18,11 +17,17 @@ export interface ConvertDocumentOptions {
   secure?: boolean;     // disable JS in PDF output
 }
 
-export async function filestackConvertDocument(
+/**
+ * Build a Filestack document-conversion CDN URL. Pure URL construction — no API
+ * call. The CDN performs the actual conversion when the URL is fetched.
+ * Pairs naturally with filestack_transform_apply if the caller wants to persist
+ * the converted document as a new file handle.
+ */
+export function filestackConvertDocument(
   handleOrUrl: string,
   format: string,
   options?: ConvertDocumentOptions
-): Promise<ToolResult<{ url: string }>> {
+): ToolResult<{ url: string }> {
   if (!hasApiKey()) return AUTH_ERROR;
   const { apiKey } = getCredentials();
 
@@ -47,18 +52,7 @@ export async function filestackConvertDocument(
     ? `${CDN_BASE}/${apiKey}/${outputSeg}/${encodeURIComponent(handleOrUrl)}`
     : `${CDN_BASE}/${outputSeg}/${handleOrUrl}`;
 
-  // Probe to confirm conversion succeeded (HEAD is cheap; CDN returns the bytes)
-  try {
-    const res = await fetch(url, { method: 'HEAD' });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      return toolError(res.status, text || res.statusText);
-    }
-    return success({ url });
-  } catch (err: unknown) {
-    const e = err as { message?: string };
-    return toolError(500, `Network error: ${e.message ?? 'Request failed'}`);
-  }
+  return success({ url });
 }
 
 export const VALID_DOCUMENT_FORMATS = VALID_FORMATS;

@@ -55,9 +55,10 @@ export async function filestackConvertVideo(
 
   const taskSeg = `video_convert=${params.join(',')}`;
   const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
+  // External URLs need the apikey segment; bare handles do not.
   const url = isExternalUrl
     ? `${CDN_BASE}/${apiKey}/${taskSeg}/${encodeURIComponent(handleOrUrl)}`
-    : `${CDN_BASE}/${apiKey}/${taskSeg}/${handleOrUrl}`;
+    : `${CDN_BASE}/${taskSeg}/${handleOrUrl}`;
 
   try {
     const res = await fetch(url);

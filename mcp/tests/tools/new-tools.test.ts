@@ -47,12 +47,23 @@ describe('intelligence: filestackAnalyze', () => {
     expect(r.error).toBeNull();
   });
 
-  it('runs text_sentiment with text arg, uses apikey path segment', async () => {
+  it('runs text_sentiment with security path segment (REQUIRED per docs)', async () => {
     nock('https://cdn.filestackcontent.com')
-      .get(`/${TEST_KEY}/text_sentiment=text:%22great%20product%22,language:en/`)
-      .reply(200, { sentiment: 'positive', confidence: 0.95 });
-    const r = await filestackAnalyze('text_sentiment', 'great product', { language: 'en' });
+      .get('/security=policy:P_B64,signature:SIG_HEX/text_sentiment=text:%22great%20product%22,language:en')
+      .reply(200, { emotions: { Positive: 0.95 } });
+    const r = await filestackAnalyze('text_sentiment', 'great product', {
+      language: 'en',
+      policy: 'P_B64',
+      signature: 'SIG_HEX',
+    });
     expect(r.error).toBeNull();
+  });
+
+  it('rejects text_sentiment without a signed policy', async () => {
+    const r = await filestackAnalyze('text_sentiment', 'great product', { language: 'en' });
+    expect(r.result).toBeNull();
+    expect(r.error?.code).toBe('invalid_input');
+    expect(r.error?.message).toMatch(/signed policy/i);
   });
 
   it('rejects unknown task', async () => {

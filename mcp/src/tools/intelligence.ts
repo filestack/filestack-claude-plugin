@@ -23,6 +23,9 @@ export interface AnalyzeOptions {
   // text_sentiment only
   text?: string;
   language?: string;
+  // security (text_sentiment REQUIRES this; other tasks need it if app security is enabled)
+  policy?: string;
+  signature?: string;
 }
 
 /**
@@ -39,7 +42,6 @@ export async function filestackAnalyze(
   options?: AnalyzeOptions
 ): Promise<ToolResult<Record<string, unknown>>> {
   if (!hasApiKey()) return AUTH_ERROR;
-  const { apiKey } = getCredentials();
 
   if (!ALL_TASKS.includes(task)) {
     return toolError('invalid_input', `Unknown task '${task}'. Valid: ${ALL_TASKS.join(', ')}`);
@@ -48,22 +50,36 @@ export async function filestackAnalyze(
     return toolError('invalid_input', task === 'text_sentiment' ? 'text is required' : 'handle is required');
   }
 
-  let url: string;
+  const securitySeg = options?.policy && options?.signature
+    ? `security=policy:${options.policy},signature:${options.signature}`
+    : null;
+
+  let taskSeg: string;
+  let pathSuffix: string;
   if (task === 'text_sentiment') {
+    // text_sentiment REQUIRES security per docs
+    if (!securitySeg) {
+      return toolError('invalid_input', 'text_sentiment requires a signed policy. Pass options.policy and options.signature (use filestack_generate_signed_url with call: ["convert"]).');
+    }
     const text = options?.text ?? handleOrText;
     const language = options?.language;
     const escaped = encodeURIComponent(text);
     const langSeg = language ? `,language:${language}` : '';
-    url = `${CDN_BASE}/${apiKey}/text_sentiment=text:"${escaped}"${langSeg}/`;
+    taskSeg = `text_sentiment=text:"${escaped}"${langSeg}`;
+    pathSuffix = ''; // no handle for text_sentiment
   } else if (task === 'doc_detection') {
     const segs: string[] = [];
     if (options?.coords !== undefined) segs.push(`coords:${options.coords}`);
     if (options?.preprocess !== undefined) segs.push(`preprocess:${options.preprocess}`);
-    const taskSeg = segs.length ? `doc_detection=${segs.join(',')}` : 'doc_detection';
-    url = `${CDN_BASE}/${taskSeg}/${encodeURIComponent(handleOrText)}`;
+    taskSeg = segs.length ? `doc_detection=${segs.join(',')}` : 'doc_detection';
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
   } else {
-    url = `${CDN_BASE}/${task}/${encodeURIComponent(handleOrText)}`;
+    taskSeg = task;
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
   }
+
+  const segments = securitySeg ? `${securitySeg}/${taskSeg}` : taskSeg;
+  const url = `${CDN_BASE}/${segments}${pathSuffix}`;
 
   try {
     const res = await fetch(url);

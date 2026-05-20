@@ -9649,12 +9649,12 @@ var require_lib2 = __commonJS({
       const dest = new URL$1(destination).protocol;
       return orig === dest;
     };
-    function fetch7(url2, opts) {
-      if (!fetch7.Promise) {
+    function fetch6(url2, opts) {
+      if (!fetch6.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch7.Promise;
-      return new fetch7.Promise(function(resolve, reject) {
+      Body.Promise = fetch6.Promise;
+      return new fetch6.Promise(function(resolve, reject) {
         const request = new Request(url2, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -9725,7 +9725,7 @@ var require_lib2 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch7.isRedirect(res.statusCode)) {
+          if (fetch6.isRedirect(res.statusCode)) {
             const location = headers.get("Location");
             let locationURL = null;
             try {
@@ -9787,7 +9787,7 @@ var require_lib2 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch7(new Request(locationURL, requestOpts)));
+                resolve(fetch6(new Request(locationURL, requestOpts)));
                 finalize2();
                 return;
             }
@@ -9879,11 +9879,11 @@ var require_lib2 = __commonJS({
         stream.end();
       }
     }
-    fetch7.isRedirect = function(code) {
+    fetch6.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch7.Promise = global.Promise;
-    module2.exports = exports2 = fetch7;
+    fetch6.Promise = global.Promise;
+    module2.exports = exports2 = fetch6;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -24699,29 +24699,37 @@ var TEXT_TASKS = ["text_sentiment"];
 var ALL_TASKS = [...FILE_TASKS, ...TEXT_TASKS];
 async function filestackAnalyze(task, handleOrText, options) {
   if (!hasApiKey()) return AUTH_ERROR;
-  const { apiKey } = getCredentials();
   if (!ALL_TASKS.includes(task)) {
     return toolError("invalid_input", `Unknown task '${task}'. Valid: ${ALL_TASKS.join(", ")}`);
   }
   if (!handleOrText || typeof handleOrText !== "string") {
     return toolError("invalid_input", task === "text_sentiment" ? "text is required" : "handle is required");
   }
-  let url2;
+  const securitySeg = options?.policy && options?.signature ? `security=policy:${options.policy},signature:${options.signature}` : null;
+  let taskSeg;
+  let pathSuffix;
   if (task === "text_sentiment") {
+    if (!securitySeg) {
+      return toolError("invalid_input", 'text_sentiment requires a signed policy. Pass options.policy and options.signature (use filestack_generate_signed_url with call: ["convert"]).');
+    }
     const text = options?.text ?? handleOrText;
     const language = options?.language;
     const escaped = encodeURIComponent(text);
     const langSeg = language ? `,language:${language}` : "";
-    url2 = `${CDN_BASE3}/${apiKey}/text_sentiment=text:"${escaped}"${langSeg}/`;
+    taskSeg = `text_sentiment=text:"${escaped}"${langSeg}`;
+    pathSuffix = "";
   } else if (task === "doc_detection") {
     const segs = [];
     if (options?.coords !== void 0) segs.push(`coords:${options.coords}`);
     if (options?.preprocess !== void 0) segs.push(`preprocess:${options.preprocess}`);
-    const taskSeg = segs.length ? `doc_detection=${segs.join(",")}` : "doc_detection";
-    url2 = `${CDN_BASE3}/${taskSeg}/${encodeURIComponent(handleOrText)}`;
+    taskSeg = segs.length ? `doc_detection=${segs.join(",")}` : "doc_detection";
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
   } else {
-    url2 = `${CDN_BASE3}/${task}/${encodeURIComponent(handleOrText)}`;
+    taskSeg = task;
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
   }
+  const segments = securitySeg ? `${securitySeg}/${taskSeg}` : taskSeg;
+  const url2 = `${CDN_BASE3}/${segments}${pathSuffix}`;
   try {
     const res = await (0, import_node_fetch3.default)(url2);
     if (!res.ok) {
@@ -24737,7 +24745,6 @@ async function filestackAnalyze(task, handleOrText, options) {
 }
 
 // src/tools/document.ts
-var import_node_fetch4 = __toESM(require_lib2());
 var CDN_BASE4 = "https://cdn.filestackcontent.com";
 var VALID_FORMATS = [
   "pdf",
@@ -24758,7 +24765,7 @@ var VALID_FORMATS = [
   "webp",
   "svg"
 ];
-async function filestackConvertDocument(handleOrUrl, format, options) {
+function filestackConvertDocument(handleOrUrl, format, options) {
   if (!hasApiKey()) return AUTH_ERROR;
   const { apiKey } = getCredentials();
   if (!handleOrUrl) return toolError("invalid_input", "handleOrUrl is required");
@@ -24775,21 +24782,11 @@ async function filestackConvertDocument(handleOrUrl, format, options) {
   const outputSeg = `output=${params.join(",")}`;
   const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
   const url2 = isExternalUrl ? `${CDN_BASE4}/${apiKey}/${outputSeg}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE4}/${outputSeg}/${handleOrUrl}`;
-  try {
-    const res = await (0, import_node_fetch4.default)(url2, { method: "HEAD" });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      return toolError(res.status, text || res.statusText);
-    }
-    return success2({ url: url2 });
-  } catch (err) {
-    const e = err;
-    return toolError(500, `Network error: ${e.message ?? "Request failed"}`);
-  }
+  return success2({ url: url2 });
 }
 
 // src/tools/video.ts
-var import_node_fetch5 = __toESM(require_lib2());
+var import_node_fetch4 = __toESM(require_lib2());
 var CDN_BASE5 = "https://cdn.filestackcontent.com";
 async function filestackConvertVideo(handleOrUrl, preset, options) {
   if (!hasApiKey()) return AUTH_ERROR;
@@ -24804,9 +24801,9 @@ async function filestackConvertVideo(handleOrUrl, preset, options) {
   }
   const taskSeg = `video_convert=${params.join(",")}`;
   const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
-  const url2 = isExternalUrl ? `${CDN_BASE5}/${apiKey}/${taskSeg}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE5}/${apiKey}/${taskSeg}/${handleOrUrl}`;
+  const url2 = isExternalUrl ? `${CDN_BASE5}/${apiKey}/${taskSeg}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE5}/${taskSeg}/${handleOrUrl}`;
   try {
-    const res = await (0, import_node_fetch5.default)(url2);
+    const res = await (0, import_node_fetch4.default)(url2);
     if (!res.ok) {
       const text = await res.text();
       return toolError(res.status, text || res.statusText);
@@ -24831,7 +24828,7 @@ async function filestackVideoStatus(uuid3) {
     return toolError("invalid_input", "uuid must be a valid UUID");
   }
   try {
-    const res = await (0, import_node_fetch5.default)(`${CDN_BASE5}/video_convert/${uuid3}`);
+    const res = await (0, import_node_fetch4.default)(`${CDN_BASE5}/video_convert/${uuid3}`);
     if (!res.ok) {
       const text = await res.text();
       return toolError(res.status, text || res.statusText);
@@ -24888,7 +24885,7 @@ function filestackScreenshotUrl(targetUrl, options) {
 }
 
 // src/tools/workflow.ts
-var import_node_fetch6 = __toESM(require_lib2());
+var import_node_fetch5 = __toESM(require_lib2());
 var CDN_BASE8 = "https://cdn.filestackcontent.com";
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 async function filestackRunWorkflow(handleOrUrl, workflowId, options) {
@@ -24906,7 +24903,7 @@ async function filestackRunWorkflow(handleOrUrl, workflowId, options) {
   const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
   const url2 = isExternalUrl ? `${CDN_BASE8}/${apiKey}/${segments.join("/")}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE8}/${segments.join("/")}/${handleOrUrl}`;
   try {
-    const res = await (0, import_node_fetch6.default)(url2);
+    const res = await (0, import_node_fetch5.default)(url2);
     if (!res.ok) {
       const text = await res.text();
       return toolError(res.status, text || res.statusText);
