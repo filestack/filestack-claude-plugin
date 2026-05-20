@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- **Fix MCP server registration** — `.mcp.json` now uses the required `mcpServers` wrapper, restoring the 10 Filestack tools that previously failed to register
+- **Bundled MCP server** — ships `mcp/dist/bundle.js` so the plugin works without `npm install`
+- **Portable paths** — MCP server path uses `${CLAUDE_PLUGIN_ROOT}` for install-location independence
+- **SDK skill: stop hardcoding the demo key into generated user code** — scaffolds now emit `import.meta.env.VITE_FILESTACK_API_KEY ?? '<demo>'` (or framework equivalent) so users can swap in their own key via env var without code changes
+- **`/filestack-transform` command** — removed restrictive empty `allowed-tools` constraint
+
 ## 1.1.0
 
 - **Cursor support** — plugin now works with both Claude Code and Cursor via dual-platform manifests

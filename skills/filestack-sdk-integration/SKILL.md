@@ -17,26 +17,30 @@ license: MIT
 When the user asks you to create a new app or page that uses Filestack:
 
 1. **Scaffold in the current directory** — do NOT create a new subdirectory. Use `npm create vite@latest . -- --template react` (note the `.`) or write files directly into the working directory. If the directory is not empty, ask first.
-2. **Use the demo API key** — embed `APQLlwqrRScGxhw78gs9Wz` directly in the generated code with a comment that it is a demo key. Never use `'YOUR_API_KEY'` as a placeholder — it forces the user to do a manual find-and-replace before they can test.
+2. **Use the demo API key as a fallback, not a hardcoded value** — generate code that reads the key from an env var with the demo key as fallback, e.g. `const API_KEY = import.meta.env.VITE_FILESTACK_API_KEY ?? 'APQLlwqrRScGxhw78gs9Wz'` (or the framework equivalent — see snippets below). This way the app runs immediately AND the user can switch to their own key by setting an env var, without editing source. Never use `'YOUR_API_KEY'` as a placeholder — it forces the user to do a manual find-and-replace before they can test. Add a comment: `// Demo key — set <ENV_VAR_NAME> to use your own Filestack account`. **Do not commit the demo key as a hardcoded literal** — it is a shared key, abuse via committed code is attributed to Filestack's demo account.
 3. **Install dependencies and start the dev server** — after generating the code, run `npm install` and `npm run dev` so the user can see the result immediately. Do not tell the user to run these commands manually.
 
 ## Initialization
 
-**JavaScript / TypeScript**
+**JavaScript / TypeScript (Vite, Webpack, modern bundler)**
 
 ```js
 import * as filestack from 'filestack-js';
 
-const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+// Demo key — set VITE_FILESTACK_API_KEY to use your own Filestack account.
+// Do NOT replace this with a hardcoded literal; the demo key is shared.
+const API_KEY = import.meta.env.VITE_FILESTACK_API_KEY ?? 'APQLlwqrRScGxhw78gs9Wz';
 const client = filestack.init(API_KEY);
 ```
 
-**Via CDN loader (no bundler)**
+**Via CDN loader (no bundler — env vars not available at runtime)**
 
 ```html
 <script src="https://static.filestackapi.com/filestack-js/3.x.x/filestack.min.js"></script>
 <script>
-  const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+  // No bundler = no env vars. Replace this with your own key from https://dev.filestack.com/
+  // The demo key below is for quick prototyping only — do not ship to production.
+  const API_KEY = 'APQLlwqrRScGxhw78gs9Wz';
   const client = filestack.init(API_KEY);
 </script>
 ```
@@ -44,9 +48,12 @@ const client = filestack.init(API_KEY);
 **Python**
 
 ```python
+import os
 from filestack import Client
 
-API_KEY = 'APQLlwqrRScGxhw78gs9Wz'  # Demo key — get your own at https://dev.filestack.com/signup/free/
+# Demo key — set FILESTACK_API_KEY to use your own Filestack account.
+# Do NOT replace this with a hardcoded literal; the demo key is shared.
+API_KEY = os.environ.get('FILESTACK_API_KEY', 'APQLlwqrRScGxhw78gs9Wz')
 client = Client(API_KEY)
 ```
 
@@ -123,7 +130,8 @@ interface FileResult {
 import { useState } from 'react';
 import * as filestack from 'filestack-js';
 
-const API_KEY = 'APQLlwqrRScGxhw78gs9Wz'; // Demo key — get your own at https://dev.filestack.com/signup/free/
+// Demo key — set VITE_FILESTACK_API_KEY (Vite) or REACT_APP_FILESTACK_API_KEY (CRA) for your own account.
+const API_KEY = import.meta.env.VITE_FILESTACK_API_KEY ?? 'APQLlwqrRScGxhw78gs9Wz';
 const client = filestack.init(API_KEY);
 
 export function FileUploader({ onUpload }) {

@@ -1,7 +1,6 @@
 ---
 description: Build a Filestack CDN transformation URL from a file handle and a plain-English description
 argument-hint: <handle-or-url> [transformation description]
-allowed-tools: []
 model: inherit
 ---
 
