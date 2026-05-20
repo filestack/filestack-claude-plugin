@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.4
+
+Transforms manifest expansion — `filestack_list_transforms` now documents **58 transforms** across image, decorative, face, intelligence, document, video, capture, archive, code, format, storage, and delivery categories (was 14 image-only transforms).
+
+New entries beyond the original 14:
+
+- **Image processing**: `smart_crop`, `quality`, `pjpg`, `auto_image`, `no_metadata`, `imagesize`, `upscale`, `redeye`, `blackwhite`, `negative`, `oil_paint`, `ascii`, `modulate`, `partial_blur`, `partial_pixelate`, `pixelate`, `collage`, `animate`
+- **Decorative**: `border`, `shadow`, `rounded_corners`, `circle`, `polaroid`, `vignette`, `torn_edges`
+- **Face operations**: `detect_faces`, `blur_faces`, `pixelate_faces`
+- **Intelligence (AI/ML)**: `tags`, `sfw`, `caption`, `ocr`, `copyright`, `doc_detection`, `image_sentiment`, `text_sentiment`
+- **Document**: `pdfinfo`, `pdfconvert`
+- **Video**: `video_convert` (use `filestack_convert_video` tool for proper async handling in v1.3.0)
+- **Capture**: `urlscreenshot`
+- **Archive**: `zip`
+- **Code minification**: `minify_js`, `minify_css`
+- **Format conversion**: `output` (formal entry with full param surface)
+- **Storage/delivery**: `store`, `cache`, `fallback`, `security`
+
+Every entry now has a `category` field, and params include `values` enums where applicable. This is a pure data update — no API changes, no new tools. Existing transforms keep the same name/param contract.
+
 ## 1.2.3
 
 Domain-correctness pass — fixes 9 issues where the plugin's behavior or documentation diverged from the actual Filestack platform. Verified against the SDKs (filestack-js, filestack-python), the server-side policy decoder (`filestack-api/filepicker/fppolicy.py`), and the official docs (`docs/content/security/policies.md`).

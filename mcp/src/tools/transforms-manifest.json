@@ -2,6 +2,7 @@
   "transforms": [
     {
       "name": "resize",
+      "category": "image",
       "description": "Resize an image",
       "params": [
         { "name": "width", "type": "number", "description": "Width in pixels" },
@@ -12,90 +13,535 @@
     },
     {
       "name": "crop",
-      "description": "Crop an image",
+      "category": "image",
+      "description": "Crop an image to specific dimensions",
       "params": [
-        { "name": "dim", "type": "string", "description": "Crop dimensions as [x,y,w,h]" }
+        { "name": "dim", "type": "array", "description": "Crop dimensions as [x, y, width, height]" }
+      ]
+    },
+    {
+      "name": "smart_crop",
+      "category": "image",
+      "description": "AI-powered crop that focuses on the most relevant part of the image",
+      "params": [
+        { "name": "width", "type": "number", "description": "Target width in pixels" },
+        { "name": "height", "type": "number", "description": "Target height in pixels" },
+        { "name": "mode", "type": "string", "values": ["auto", "face", "object"], "description": "Crop focus mode" },
+        { "name": "fill_color", "type": "string", "description": "Hex color used when extending the image" }
       ]
     },
     {
       "name": "rotate",
+      "category": "image",
       "description": "Rotate an image",
       "params": [
-        { "name": "deg", "type": "number", "description": "Degrees to rotate (0-359, or exif)" },
+        { "name": "deg", "type": "number", "description": "Degrees to rotate (0-359, or 'exif' for EXIF-based auto-rotate)" },
         { "name": "background", "type": "string", "description": "Background color for empty areas (hex)" }
       ]
     },
     {
       "name": "flip",
+      "category": "image",
       "description": "Flip image vertically (mirror over horizontal axis)",
       "params": []
     },
     {
       "name": "flop",
+      "category": "image",
       "description": "Flip image horizontally (mirror over vertical axis)",
       "params": []
     },
     {
       "name": "enhance",
+      "category": "image",
       "description": "Auto-enhance image quality",
       "params": []
     },
     {
       "name": "monochrome",
+      "category": "image",
       "description": "Convert image to monochrome (grayscale)",
       "params": []
     },
     {
+      "name": "blackwhite",
+      "category": "image",
+      "description": "Convert image to pure black-and-white using a threshold",
+      "params": [
+        { "name": "threshold", "type": "number", "description": "Brightness threshold 0-100" }
+      ]
+    },
+    {
+      "name": "negative",
+      "category": "image",
+      "description": "Invert image colors (photographic negative)",
+      "params": []
+    },
+    {
       "name": "sepia",
+      "category": "image",
       "description": "Apply sepia tone effect",
       "params": [
         { "name": "tone", "type": "number", "description": "Sepia tone intensity (0-100)" }
       ]
     },
     {
-      "name": "output",
-      "description": "Convert output format",
+      "name": "oil_paint",
+      "category": "image",
+      "description": "Apply oil-painting effect",
       "params": [
-        { "name": "format", "type": "string", "values": ["jpg", "png", "webp", "gif", "pdf", "svg"], "description": "Output format" },
-        { "name": "quality", "type": "number", "description": "Quality 1-100 (jpg/webp only)" }
+        { "name": "amount", "type": "number", "description": "Effect intensity (2-100)" }
+      ]
+    },
+    {
+      "name": "ascii",
+      "category": "image",
+      "description": "Convert image to ASCII art",
+      "params": [
+        { "name": "background", "type": "string", "description": "Background color (hex)" },
+        { "name": "foreground", "type": "string", "description": "Text color (hex)" },
+        { "name": "colored", "type": "boolean", "description": "Use color (true) or grayscale (false)" },
+        { "name": "size", "type": "number", "description": "Character size 10-100" }
+      ]
+    },
+    {
+      "name": "modulate",
+      "category": "image",
+      "description": "Adjust hue, saturation, and brightness",
+      "params": [
+        { "name": "brightness", "type": "number", "description": "Brightness 0-10000 (100 = no change)" },
+        { "name": "hue", "type": "number", "description": "Hue rotation 0-359" },
+        { "name": "saturation", "type": "number", "description": "Saturation 0-10000 (100 = no change)" }
       ]
     },
     {
       "name": "compress",
-      "description": "Compress image",
+      "category": "image",
+      "description": "Lossless compression of the image",
       "params": [
+        { "name": "metadata", "type": "boolean", "description": "Preserve EXIF/metadata (default false)" }
+      ]
+    },
+    {
+      "name": "quality",
+      "category": "image",
+      "description": "Set JPEG/WebP quality directly (use 'output=quality:N' for new conversions instead)",
+      "params": [
+        { "name": "value", "type": "number", "description": "Quality 1-100" }
+      ]
+    },
+    {
+      "name": "pjpg",
+      "category": "image",
+      "description": "Convert to progressive JPEG",
+      "params": [
+        { "name": "quality", "type": "number", "description": "JPEG quality 0-100" },
         { "name": "metadata", "type": "boolean", "description": "Preserve metadata" }
       ]
     },
     {
-      "name": "crop_faces",
-      "description": "Detect faces and crop to them",
+      "name": "auto_image",
+      "category": "image",
+      "description": "Server-side format negotiation — picks WebP/AVIF/JPEG based on Accept header",
+      "params": []
+    },
+    {
+      "name": "no_metadata",
+      "category": "image",
+      "description": "Strip all EXIF, IPTC, XMP, and color profile metadata",
+      "params": []
+    },
+    {
+      "name": "imagesize",
+      "category": "image",
+      "description": "Return JSON with the image's width, height, and orientation (no transformation)",
+      "params": []
+    },
+    {
+      "name": "upscale",
+      "category": "image",
+      "description": "AI-powered image upscaling",
       "params": [
-        { "name": "faces", "type": "number", "description": "Number of faces to detect (1-100 or all)" },
-        { "name": "buffer", "type": "number", "description": "Buffer percentage around detected face" }
+        { "name": "upscale", "type": "boolean", "description": "Apply AI upscaling" },
+        { "name": "noise", "type": "string", "values": ["none", "low", "medium", "high"], "description": "Noise reduction level" },
+        { "name": "style", "type": "string", "values": ["artwork", "photo"], "description": "Source content type" }
       ]
     },
     {
+      "name": "redeye",
+      "category": "image",
+      "description": "Auto-remove red-eye from portrait photos",
+      "params": []
+    },
+    {
       "name": "blur",
-      "description": "Blur image",
+      "category": "image",
+      "description": "Gaussian blur the entire image",
       "params": [
-        { "name": "amount", "type": "number", "description": "Blur amount 1-20" }
+        { "name": "amount", "type": "number", "description": "Blur amount 2-20" }
+      ]
+    },
+    {
+      "name": "partial_blur",
+      "category": "image",
+      "description": "Blur specific rectangular regions of the image",
+      "params": [
+        { "name": "objects", "type": "array", "description": "Array of [x, y, width, height] regions to blur" },
+        { "name": "amount", "type": "number", "description": "Blur amount 2-20" },
+        { "name": "blur", "type": "number", "description": "Alias for amount" }
+      ]
+    },
+    {
+      "name": "pixelate",
+      "category": "image",
+      "description": "Pixelate the entire image",
+      "params": [
+        { "name": "amount", "type": "number", "description": "Pixel block size 2-100" }
+      ]
+    },
+    {
+      "name": "partial_pixelate",
+      "category": "image",
+      "description": "Pixelate specific rectangular regions of the image",
+      "params": [
+        { "name": "objects", "type": "array", "description": "Array of [x, y, width, height] regions" },
+        { "name": "amount", "type": "number", "description": "Pixel block size 2-100" }
       ]
     },
     {
       "name": "sharpen",
-      "description": "Sharpen image",
+      "category": "image",
+      "description": "Sharpen the image",
       "params": [
         { "name": "amount", "type": "number", "description": "Sharpen amount 1-20" }
       ]
     },
     {
       "name": "watermark",
-      "description": "Add a watermark image",
+      "category": "image",
+      "description": "Composite a watermark image on top",
       "params": [
         { "name": "file", "type": "string", "description": "Handle of the watermark image" },
-        { "name": "size", "type": "number", "description": "Watermark size percentage" },
-        { "name": "position", "type": "array", "description": "Position as [vertical, horizontal] e.g. ['top','right']. Vertical: top/middle/bottom. Horizontal: left/center/right" }
+        { "name": "size", "type": "number", "description": "Watermark size as percentage of base image" },
+        { "name": "position", "type": "array", "description": "Position as [vertical, horizontal] e.g. ['top','right']. Vertical: top/middle/bottom. Horizontal: left/center/right." }
+      ]
+    },
+    {
+      "name": "border",
+      "category": "decorative",
+      "description": "Add a solid-color border around the image",
+      "params": [
+        { "name": "width", "type": "number", "description": "Border width in pixels 1-1000" },
+        { "name": "color", "type": "string", "description": "Border color (hex)" },
+        { "name": "background", "type": "string", "description": "Background color behind transparent areas (hex)" }
+      ]
+    },
+    {
+      "name": "shadow",
+      "category": "decorative",
+      "description": "Add a drop shadow under the image",
+      "params": [
+        { "name": "blur", "type": "number", "description": "Shadow blur 0-20" },
+        { "name": "opacity", "type": "number", "description": "Shadow opacity 0-100" },
+        { "name": "vector", "type": "array", "description": "Shadow offset as [x, y]" },
+        { "name": "color", "type": "string", "description": "Shadow color (hex)" },
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "rounded_corners",
+      "category": "decorative",
+      "description": "Round the image corners",
+      "params": [
+        { "name": "radius", "type": "number", "description": "Corner radius in pixels (or 'max' for circle)" },
+        { "name": "blur", "type": "number", "description": "Edge blur 0-20" },
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "circle",
+      "category": "decorative",
+      "description": "Crop image to a circle",
+      "params": [
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "polaroid",
+      "category": "decorative",
+      "description": "Apply a Polaroid-photo frame effect",
+      "params": [
+        { "name": "color", "type": "string", "description": "Border color (hex)" },
+        { "name": "rotate", "type": "number", "description": "Rotation in degrees 0-359" },
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "vignette",
+      "category": "decorative",
+      "description": "Apply a dark vignette around the image edges",
+      "params": [
+        { "name": "amount", "type": "number", "description": "Vignette intensity 0-100" },
+        { "name": "blurmode", "type": "string", "values": ["linear", "gaussian"], "description": "Blur falloff mode" },
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "torn_edges",
+      "category": "decorative",
+      "description": "Apply a torn-paper edge effect",
+      "params": [
+        { "name": "spread", "type": "array", "description": "Tear spread as [min, max] pixels" },
+        { "name": "background", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "collage",
+      "category": "image",
+      "description": "Composite multiple images into a single collage",
+      "params": [
+        { "name": "files", "type": "array", "description": "Array of file handles to compose with the base handle" },
+        { "name": "margin", "type": "number", "description": "Margin between images" },
+        { "name": "width", "type": "number", "description": "Output width" },
+        { "name": "height", "type": "number", "description": "Output height" },
+        { "name": "color", "type": "string", "description": "Background color (hex)" }
+      ]
+    },
+    {
+      "name": "animate",
+      "category": "image",
+      "description": "Compose multiple images into an animated GIF",
+      "params": [
+        { "name": "delay", "type": "number", "description": "Frame delay in 100ths of a second" },
+        { "name": "loop", "type": "number", "description": "Loop count (0 = infinite)" },
+        { "name": "width", "type": "number", "description": "Output width" },
+        { "name": "height", "type": "number", "description": "Output height" },
+        { "name": "fit", "type": "string", "values": ["preserve", "crop", "scale"], "description": "Fit mode" }
+      ]
+    },
+    {
+      "name": "crop_faces",
+      "category": "faces",
+      "description": "Detect faces and crop to them",
+      "params": [
+        { "name": "mode", "type": "string", "values": ["thumb", "crop", "fill"], "description": "Crop mode" },
+        { "name": "width", "type": "number", "description": "Output width" },
+        { "name": "height", "type": "number", "description": "Output height" },
+        { "name": "faces", "type": "number", "description": "Number of faces to detect (1-100 or 'all')" },
+        { "name": "buffer", "type": "number", "description": "Buffer percentage around detected faces" }
+      ]
+    },
+    {
+      "name": "detect_faces",
+      "category": "faces",
+      "description": "Return JSON with detected face coordinates (no image transformation)",
+      "params": [
+        { "name": "minsize", "type": "number", "description": "Minimum face size in pixels" },
+        { "name": "maxsize", "type": "number", "description": "Maximum face size in pixels" },
+        { "name": "color", "type": "string", "description": "Box color for face annotation (hex)" },
+        { "name": "export", "type": "boolean", "description": "Return JSON instead of annotated image" }
+      ]
+    },
+    {
+      "name": "blur_faces",
+      "category": "faces",
+      "description": "Detect faces and blur them",
+      "params": [
+        { "name": "faces", "type": "number", "description": "Number of faces to blur ('all' or 1-100)" },
+        { "name": "amount", "type": "number", "description": "Blur amount 2-20" },
+        { "name": "buffer", "type": "number", "description": "Buffer percentage around faces" },
+        { "name": "minsize", "type": "number", "description": "Minimum face size" }
+      ]
+    },
+    {
+      "name": "pixelate_faces",
+      "category": "faces",
+      "description": "Detect faces and pixelate them",
+      "params": [
+        { "name": "faces", "type": "number", "description": "Number of faces to pixelate" },
+        { "name": "amount", "type": "number", "description": "Pixel block size 2-100" },
+        { "name": "buffer", "type": "number", "description": "Buffer percentage around faces" },
+        { "name": "minsize", "type": "number", "description": "Minimum face size" }
+      ]
+    },
+    {
+      "name": "tags",
+      "category": "intelligence",
+      "description": "Generate AI-derived content tags for the image (Rekognition/Vision)",
+      "params": []
+    },
+    {
+      "name": "sfw",
+      "category": "intelligence",
+      "description": "Detect not-safe-for-work content in the image",
+      "params": []
+    },
+    {
+      "name": "caption",
+      "category": "intelligence",
+      "description": "Generate a natural-language caption describing the image",
+      "params": []
+    },
+    {
+      "name": "ocr",
+      "category": "intelligence",
+      "description": "Extract text from the image via OCR",
+      "params": []
+    },
+    {
+      "name": "copyright",
+      "category": "intelligence",
+      "description": "Check for copyrighted content using PicScout / Getty Images",
+      "params": []
+    },
+    {
+      "name": "doc_detection",
+      "category": "intelligence",
+      "description": "Detect document edges in a photo and extract a normalized scan",
+      "params": [
+        { "name": "coords", "type": "boolean", "description": "Return detected corner coordinates" },
+        { "name": "preprocess", "type": "boolean", "description": "Apply preprocessing (denoise, deskew)" }
+      ]
+    },
+    {
+      "name": "image_sentiment",
+      "category": "intelligence",
+      "description": "Detect facial expressions and emotional sentiment in the image",
+      "params": []
+    },
+    {
+      "name": "text_sentiment",
+      "category": "intelligence",
+      "description": "Run sentiment analysis on a text string (does not require a file handle)",
+      "params": [
+        { "name": "text", "type": "string", "description": "Text to analyze" },
+        { "name": "language", "type": "string", "description": "Language code (e.g. en, es, fr, de)" }
+      ]
+    },
+    {
+      "name": "pdfinfo",
+      "category": "document",
+      "description": "Return JSON metadata about a PDF (page count, dimensions, etc.)",
+      "params": [
+        { "name": "colorinfo", "type": "boolean", "description": "Include color-space details per page" }
+      ]
+    },
+    {
+      "name": "pdfconvert",
+      "category": "document",
+      "description": "Convert pages of a PDF (reorder, extract, change page size or orientation)",
+      "params": [
+        { "name": "pageorientation", "type": "string", "values": ["portrait", "landscape"], "description": "Output orientation" },
+        { "name": "pageformat", "type": "string", "values": ["a3", "a4", "a5", "b4", "b5", "letter", "legal", "tabloid"], "description": "Output page size" },
+        { "name": "pages", "type": "array", "description": "Pages to keep (1-based, e.g. [1,3,5-7])" }
+      ]
+    },
+    {
+      "name": "video_convert",
+      "category": "video",
+      "description": "Transcode video via Telestream (async — returns a status URL to poll). Use filestack_convert_video tool for proper async handling.",
+      "params": [
+        { "name": "preset", "type": "string", "description": "Output preset (h264, hls, dash, mp3, etc.)" },
+        { "name": "width", "type": "number", "description": "Output width" },
+        { "name": "height", "type": "number", "description": "Output height" },
+        { "name": "fps", "type": "number", "description": "Frames per second" },
+        { "name": "video_bitrate", "type": "number", "description": "Video bitrate (kbps)" },
+        { "name": "audio_bitrate", "type": "number", "description": "Audio bitrate (kbps)" },
+        { "name": "force", "type": "boolean", "description": "Force re-encode even if format matches" }
+      ]
+    },
+    {
+      "name": "urlscreenshot",
+      "category": "capture",
+      "description": "Capture a screenshot of a web URL (use with a URL as the source, not a file handle)",
+      "params": [
+        { "name": "agent", "type": "string", "values": ["desktop", "mobile"], "description": "User agent profile" },
+        { "name": "mode", "type": "string", "values": ["all", "window"], "description": "Capture entire page or just visible window" },
+        { "name": "width", "type": "number", "description": "Viewport width" },
+        { "name": "height", "type": "number", "description": "Viewport height" },
+        { "name": "delay", "type": "number", "description": "Wait time before capture (ms)" },
+        { "name": "orientation", "type": "string", "values": ["portrait", "landscape"], "description": "Viewport orientation (mobile)" },
+        { "name": "device", "type": "string", "description": "Mobile device profile (e.g. iphone6plus)" }
+      ]
+    },
+    {
+      "name": "zip",
+      "category": "archive",
+      "description": "Bundle multiple files into a ZIP archive (chain after a /<handle>/<handle2>/.../zip pattern)",
+      "params": []
+    },
+    {
+      "name": "minify_js",
+      "category": "code",
+      "description": "Minify a JavaScript source file via Babel/UglifyJS",
+      "params": [
+        { "name": "gzip", "type": "boolean", "description": "Also gzip the output" },
+        { "name": "booleans", "type": "boolean", "description": "Optimize booleans" },
+        { "name": "mangle", "type": "boolean", "description": "Mangle variable names" }
+      ]
+    },
+    {
+      "name": "minify_css",
+      "category": "code",
+      "description": "Minify a CSS source file",
+      "params": [
+        { "name": "gzip", "type": "boolean", "description": "Also gzip the output" },
+        { "name": "level", "type": "number", "description": "Optimization level 1-2" }
+      ]
+    },
+    {
+      "name": "output",
+      "category": "format",
+      "description": "Convert output to a different format. Place this LAST in the chain — after all image manipulations.",
+      "params": [
+        { "name": "format", "type": "string", "values": ["jpg", "jpeg", "png", "webp", "gif", "pdf", "svg", "tiff", "heic"], "description": "Output format" },
+        { "name": "quality", "type": "number", "description": "Quality 1-100 (jpg/webp/heic)" },
+        { "name": "background", "type": "string", "description": "Background color for transparent areas (hex)" },
+        { "name": "page", "type": "number", "description": "Page number to extract (PDF input)" },
+        { "name": "density", "type": "number", "description": "Output DPI (PDF rasterization)" },
+        { "name": "secure", "type": "boolean", "description": "Disable JavaScript in PDF output" },
+        { "name": "docinfo", "type": "boolean", "description": "Preserve document metadata" }
+      ]
+    },
+    {
+      "name": "store",
+      "category": "storage",
+      "description": "Persist the transform result as a new stored file (default behavior of filestack_transform_apply)",
+      "params": [
+        { "name": "location", "type": "string", "values": ["s3", "gcs", "azure", "rackspace", "dropbox"], "description": "Storage backend" },
+        { "name": "path", "type": "string", "description": "Storage path prefix" },
+        { "name": "filename", "type": "string", "description": "Output filename" },
+        { "name": "container", "type": "string", "description": "Storage container/bucket" },
+        { "name": "region", "type": "string", "description": "Storage region" },
+        { "name": "access", "type": "string", "values": ["public", "private"], "description": "Object ACL" },
+        { "name": "base64decode", "type": "boolean", "description": "Base64-decode the file before storing" }
+      ]
+    },
+    {
+      "name": "cache",
+      "category": "delivery",
+      "description": "Set CDN cache behavior for the output",
+      "params": [
+        { "name": "expiry", "type": "number", "description": "Cache TTL in seconds" },
+        { "name": "cache", "type": "boolean", "description": "Enable or disable caching" }
+      ]
+    },
+    {
+      "name": "fallback",
+      "category": "delivery",
+      "description": "Define a fallback handle when the source is missing or errors",
+      "params": [
+        { "name": "handle", "type": "string", "description": "Fallback file handle" },
+        { "name": "cache", "type": "number", "description": "Fallback cache TTL (seconds)" }
+      ]
+    },
+    {
+      "name": "security",
+      "category": "delivery",
+      "description": "Apply a signed policy/signature inline. Use filestack_generate_signed_url for normal flow.",
+      "params": [
+        { "name": "policy", "type": "string", "description": "URL-safe base64 policy" },
+        { "name": "signature", "type": "string", "description": "HMAC-SHA256 hex signature" }
       ]
     }
   ]
