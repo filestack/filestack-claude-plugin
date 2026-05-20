@@ -6,8 +6,6 @@ description: >
   error shapes ({'result': 'error', 'error':, {'error':, result: null in Filestack context),
   HTTP 401/403/404/429 from Filestack endpoints,
   or when user pastes a Filestack API error message.
-version: 1.0.0
-license: MIT
 ---
 
 # Filestack Error Diagnosis

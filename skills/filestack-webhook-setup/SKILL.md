@@ -5,8 +5,6 @@ description: >
   FS-Signature, FS-Timestamp, fp.upload, fp.converse, fp.delete,
   fp.overwrite, fp.video_converse, fp.scan, fp.export, fs.workflow, filestack_webhook,
   webhook_url, or when user asks about Filestack event notifications.
-version: 1.0.0
-license: MIT
 ---
 
 # Filestack Webhook Setup

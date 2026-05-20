@@ -1,10 +1,12 @@
 {
-  "filestack": {
-    "command": "node",
-    "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/dist/bundle.js"],
-    "env": {
-      "FILESTACK_API_KEY": "${FILESTACK_API_KEY:-APQLlwqrRScGxhw78gs9Wz}",
-      "FILESTACK_APP_SECRET": "${FILESTACK_APP_SECRET:-}"
+  "mcpServers": {
+    "filestack": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/dist/bundle.js"],
+      "env": {
+        "FILESTACK_API_KEY": "${FILESTACK_API_KEY:-APQLlwqrRScGxhw78gs9Wz}",
+        "FILESTACK_APP_SECRET": "${FILESTACK_APP_SECRET:-}"
+      }
     }
   }
 }

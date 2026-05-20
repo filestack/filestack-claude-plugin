@@ -1,7 +1,6 @@
 ---
 description: Build a Filestack CDN transformation URL from a file handle and a plain-English description
 argument-hint: <handle-or-url> [transformation description]
-allowed-tools: []
 model: inherit
 ---
 
@@ -22,7 +21,7 @@ plain-English description of what you want to do.
 
 ## CDN URL format
 
-~~~
+~~~text
 https://cdn.filestackcontent.com/<operation1>=<param1>:<val1>,<param2>:<val2>/<operation2>/<handle>
 ~~~
 
@@ -46,7 +45,7 @@ https://cdn.filestackcontent.com/<operation1>=<param1>:<val1>,<param2>:<val2>/<o
 
 ## Examples
 
-~~~
+~~~text
 /filestack-transform abc123XYZ resize to 800x600 and convert to webp
 → https://cdn.filestackcontent.com/resize=width:800,height:600/output=format:webp/abc123XYZ
 
