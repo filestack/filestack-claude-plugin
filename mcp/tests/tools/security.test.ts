@@ -21,19 +21,20 @@ describe('security tools', () => {
   });
 
   describe('filestackGeneratePolicy', () => {
-    // Helper to decode URL-safe base64 (Filestack uses urlsafe_b64encode without padding)
+    // Helper to decode URL-safe base64. Filestack now emits WITH padding
+    // (matches server's strict urlsafe_b64decode), so no padding restoration needed.
     function decodePolicy(policyB64: string): Record<string, unknown> {
-      // Restore standard base64 from URL-safe form and re-add padding
       const standard = policyB64.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = standard + '==='.slice(0, (4 - standard.length % 4) % 4);
-      return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+      return JSON.parse(Buffer.from(standard, 'base64').toString('utf8'));
     }
 
-    it('generates a URL-safe base64-encoded policy for read access', () => {
+    it('generates a URL-safe base64-encoded policy with padding for read access', () => {
       const result = filestackGeneratePolicy({ call: 'read', expiry: FUTURE_EXPIRY });
       expect(result.error).toBeNull();
       // URL-safe base64 must not contain '+' or '/'
       expect(result.result).not.toMatch(/[+/]/);
+      // Padded base64 length must be a multiple of 4 (server requirement)
+      expect(result.result!.length % 4).toBe(0);
       const decoded = decodePolicy(result.result!);
       expect(decoded.call).toEqual(['read']);
       expect(decoded.expiry).toBe(FUTURE_EXPIRY);
@@ -76,9 +77,9 @@ describe('security tools', () => {
 
   describe('filestackSignPolicy', () => {
     it('produces correct HMAC-SHA256 hex signature', () => {
-      // Construct a URL-safe base64 policy as the tool would receive it
+      // Construct a URL-safe padded base64 policy as the tool would receive it
       const raw = JSON.stringify({ call: ['read'], expiry: FUTURE_EXPIRY });
-      const policyB64 = Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const policyB64 = Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
       const result = filestackSignPolicy(policyB64);
       expect(result.error).toBeNull();
 
@@ -96,25 +97,26 @@ describe('security tools', () => {
   });
 
   describe('filestackGenerateSignedUrl', () => {
-    it('returns policy, signature, and full signed URL', () => {
+    it('returns policy, signature, and path-based signed URL (canonical Filestack form)', () => {
       const result = filestackGenerateSignedUrl('abc123', { call: 'read', expiry: FUTURE_EXPIRY });
       expect(result.error).toBeNull();
       const r = result.result!;
       expect(r.policy).toBeTruthy();
       expect(r.signature).toBeTruthy();
-      expect(r.signedUrl).toContain('abc123');
-      expect(r.signedUrl).toContain(`policy=${r.policy}`);
-      expect(r.signedUrl).toContain(`signature=${r.signature}`);
-      expect(r.signedUrl).toContain(`apikey=${TEST_KEY}`);
+      // Canonical form: cdn.filestackcontent.com/security=policy:<P>,signature:<S>/<handle>
+      // See docs/content/security/policies.md, filestack-python models/security.py
+      expect(r.signedUrl).toBe(
+        `https://cdn.filestackcontent.com/security=policy:${r.policy},signature:${r.signature}/abc123`
+      );
     });
 
-    it('falls back to placeholder key when FILESTACK_API_KEY is not set', () => {
+    it('works even when FILESTACK_API_KEY is not set (CDN URLs do not require apikey for first-party handles)', () => {
       delete process.env.FILESTACK_API_KEY;
       const result = filestackGenerateSignedUrl('abc123', { call: 'read', expiry: FUTURE_EXPIRY });
       expect(result.error).toBeNull();
       const r = result.result!;
       expect(r.signedUrl).toContain('abc123');
-      expect(r.signedUrl).toContain('apikey=APQLlwqrRScGxhw78gs9Wz');
+      expect(r.signedUrl).toContain('security=policy:');
     });
 
     it('returns secret error when FILESTACK_APP_SECRET is missing', () => {

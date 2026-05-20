@@ -112,7 +112,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: {
         call: {
-          description: 'Permission(s) to grant. Valid values: read, stat, write, writeUrl, store, convert, remove, revoke, pick, exif, runWorkflow',
+          description: 'Permission(s) to grant. Valid values: pick, read, stat, write, writeUrl, store, convert, remove, exif, runWorkflow',
           oneOf: [
             { type: 'string' },
             { type: 'array', items: { type: 'string' } },
@@ -120,6 +120,7 @@ const TOOLS: Tool[] = [
         },
         expiry: { type: 'number', description: 'Unix timestamp (seconds) when the policy expires' },
         handle: { type: 'string', description: 'Restrict policy to a specific file handle' },
+        url: { type: 'string', description: 'Restrict writeUrl/store to a specific source URL or regex' },
         path: { type: 'string', description: 'Restrict policy to a path prefix' },
         container: { type: 'string', description: 'Restrict policy to a storage container' },
         minSize: { type: 'number', description: 'Minimum file size in bytes' },
@@ -146,6 +147,7 @@ const TOOLS: Tool[] = [
         handle: { type: 'string' },
         call: { oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }] },
         expiry: { type: 'number' },
+        url: { type: 'string', description: 'Restrict writeUrl/store to a specific source URL or regex' },
         container: { type: 'string' },
         path: { type: 'string' },
         minSize: { type: 'number' },

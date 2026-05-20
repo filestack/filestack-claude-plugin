@@ -75,7 +75,8 @@ const picker = client.picker({
   // Cloud sources (uses filestack-dialog OAuth)
   // Available sources: local_file_system, url, imagesearch, webcam, video, audio,
   // googledrive, dropbox, facebook, instagram, box, onedrive, onedriveforbusiness,
-  // gmail, github, googlephotos, unsplash, tint, customsource
+  // gmail, github, googlephotos, picasa, clouddrive, evernote, flickr,
+  // unsplash, tint, customsource
   fromSources: ['local_file_system', 'googledrive', 'dropbox', 'url'],
 
   // Where to store uploaded files

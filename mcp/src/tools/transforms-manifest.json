@@ -7,7 +7,7 @@
         { "name": "width", "type": "number", "description": "Width in pixels" },
         { "name": "height", "type": "number", "description": "Height in pixels" },
         { "name": "fit", "type": "string", "values": ["clip", "crop", "scale", "max"], "description": "Resize strategy" },
-        { "name": "align", "type": "string", "values": ["top", "bottom", "left", "right", "center", "faces"], "description": "Alignment when cropping" }
+        { "name": "align", "type": "string", "values": ["top", "middle", "bottom", "left", "right", "center", "faces"], "description": "Alignment when cropping" }
       ]
     },
     {

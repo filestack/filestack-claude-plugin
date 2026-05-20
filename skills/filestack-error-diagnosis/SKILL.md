@@ -21,8 +21,10 @@ Filestack APIs return errors in two formats:
 
 **Processing/CDN format** (`process.filestackapi.com`, `cdn.filestackcontent.com`):
 ```json
-{ "error": "Unsupported conversion", "result": null }
+{ "error": "Unsupported conversion" }
 ```
+
+(`v1` API includes a top-level `result` field; the processing/CDN edge does not — just `error` with a string or object.)
 
 ## HTTP Error Code Reference
 
@@ -31,7 +33,7 @@ Filestack APIs return errors in two formats:
 | 401 | Unauthorized | Invalid or missing API key | Check `FILESTACK_API_KEY` is correct and hasn't been rotated |
 | 403 | Forbidden | Security policy violation, or CORS origin not whitelisted | See policy errors below |
 | 404 | Not Found | Handle doesn't exist, has been deleted, or has expired | Verify handle is correct; check app's handle expiry setting |
-| 429 | Rate Limited | Too many requests | Respect `Retry-After` header; implement exponential backoff |
+| 429 | Rate Limited | Too many requests | Read Filestack rate-limit headers (below); implement exponential backoff |
 | 500/502/503 | Server Error | Transient Filestack service issue | Retry with backoff; check status.filestack.com |
 
 ## Security Policy Errors (403)
@@ -71,4 +73,9 @@ Run through this in order when debugging Filestack errors:
 3. **Handle exists?** — Retrieve metadata for the handle; 404 means handle is gone
 4. **CORS origin whitelisted?** — Check Filestack dashboard → app → Security → Domains
 5. **Transform params valid?** — Run the CDN URL in a browser; the error is often self-describing
-6. **Rate limit hit?** — Check for 429 and `Retry-After` header in your HTTP client logs
+6. **Rate limit hit?** — Check for 429 (or 503 on the upload edge) and Filestack-specific rate-limit headers:
+   - `Filestack-Limit` — request quota for the window
+   - `Filestack-Remaining` — requests left in the window
+   - `Filestack-Reset` — unix timestamp when the window resets
+
+   Note: Filestack does **not** emit the standard `Retry-After` header — use `Filestack-Reset` to compute backoff. The upload edge may also return `503 Service Unavailable` (not 429) when rate-limited; treat both as rate-limit signals.
