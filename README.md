@@ -2,7 +2,7 @@
 
 Official [Filestack](https://www.filestack.com) plugin for [Claude Code](https://claude.com/claude-code) and [Cursor](https://cursor.com) — the file handling platform-as-a-service for uploads, cloud source ingestion, on-the-fly image/video/document processing, CDN delivery, and policy-based security.
 
-This plugin brings the full Filestack platform into your coding agent through 10 MCP tools, 3 context-aware skills, and a natural language slash command. Upload files, build transformation pipelines, generate signed security policies, set up webhooks, and debug API errors — all through conversation without leaving the terminal.
+This plugin brings the full Filestack platform into your coding agent through **19 MCP tools**, **5 context-aware skills**, and a natural language slash command. Upload files, build transformation pipelines, run AI/ML analysis (tagging, OCR, captioning, moderation), convert documents and videos, bundle ZIPs, capture web screenshots, run workflows, generate signed security policies, verify webhook signatures, set up integrations, and debug API errors — all through conversation without leaving the terminal.
 
 ---
 
@@ -72,6 +72,18 @@ The MCP server runs locally via Node.js. Policy signing happens on your machine 
 ---
 
 ## MCP Tools
+
+The plugin exposes 19 tools across 7 categories:
+
+| Category | Tools |
+|----------|-------|
+| File operations | `filestack_upload`, `filestack_retrieve`, `filestack_delete`, `filestack_store_url` |
+| Transformations | `filestack_transform_url`, `filestack_transform_apply`, `filestack_list_transforms` |
+| Security | `filestack_generate_policy`, `filestack_sign_policy`, `filestack_generate_signed_url` |
+| Intelligence (AI/ML) | `filestack_analyze` (tags / sfw / caption / ocr / copyright / image_sentiment / doc_detection / text_sentiment) |
+| Document & video | `filestack_convert_document`, `filestack_convert_video`, `filestack_video_status` |
+| Archive & capture | `filestack_zip_files`, `filestack_screenshot_url` |
+| Workflows & webhooks | `filestack_run_workflow`, `filestack_verify_webhook_signature`, `filestack_sign_webhook_payload` |
 
 ### File Operations
 
@@ -241,6 +253,170 @@ One-step convenience tool: generates a policy, signs it, and returns a fully sig
 **Returns:** `{ policy, signature, signedUrl }`
 
 **Requires:** Both `FILESTACK_API_KEY` and `FILESTACK_APP_SECRET` environment variables
+
+---
+
+### Intelligence
+
+#### `filestack_analyze`
+
+Run a Filestack AI/ML task on a file (or text). One tool, 8 tasks:
+
+| `task` | Input | Output | Use case |
+|---|---|---|---|
+| `tags` | image handle | `{ tags: { auto: { keyword: confidence } } }` | Auto-tagging, search indexing |
+| `sfw` | image handle | `{ sfw: boolean }` | Content moderation |
+| `caption` | image handle | `{ caption: "..." }` | Alt-text, accessibility |
+| `ocr` | image / PDF handle | `{ text, blocks, confidence }` | Receipts, invoices, signage |
+| `copyright` | image handle | `{ copyright, matches }` | Stock photo / IP enforcement |
+| `image_sentiment` | image handle | `{ sentiment, confidence }` | Emotion detection in faces |
+| `doc_detection` | photo of doc | `{ detected, corners? }` | Mobile scanner UX |
+| `text_sentiment` | text string | `{ sentiment, confidence }` | Comment / review analysis |
+
+```
+"Is this image SFW?"
+"What's in this image?"
+"Extract text from this receipt"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `task` | enum | Yes | One of the tasks above |
+| `handleOrText` | string | Yes | File handle (for file tasks) or text (for `text_sentiment`) |
+| `options` | object | No | `{ coords, preprocess }` for `doc_detection`; `{ language }` for `text_sentiment` |
+
+> Security note: when app security is enabled, the signing policy must include `convert` in `call`.
+
+> Video intelligence (`video_sfw`, `video_tagging`) is **not** a direct task — use `filestack_run_workflow` with a workflow that includes the video intelligence step.
+
+---
+
+### Document & Video
+
+#### `filestack_convert_document`
+
+Convert documents between formats (DOC/DOCX/ODT/PPT/PPTX/ODP/XLS/XLSX/ODS/HTML/TXT/PDF and image formats JPG/PJPG/PNG/WebP/SVG).
+
+```
+"Convert handle abc123 to PDF"
+"Extract page 3 of this PDF as a 300dpi PNG"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `handleOrUrl` | string | Yes | Source handle or external URL |
+| `format` | enum | Yes | Target format (see list above) |
+| `options` | object | No | `{ page, density, quality, pageformat, pageorientation, secure }` |
+
+#### `filestack_convert_video`
+
+Submit a Telestream-backed video transcode job. Async — returns `{ uuid, status_url, timestamp }`. Use `filestack_video_status` to poll, or configure a webhook subscribed to `fp.video_converse`.
+
+```
+"Transcode handle abc123 to HLS for streaming"
+"Convert this video to 720p H.264 MP4"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `handleOrUrl` | string | Yes | Source handle or URL |
+| `preset` | string | Yes | `h264`, `hls`, `dash`, `mp3`, `mp4`, `m4a`, `webm`, etc. |
+| `options` | object | No | `{ width, height, fps, video_bitrate, audio_bitrate, force, clip_offset, clip_length, watermark_url, email, ... }` |
+
+#### `filestack_video_status`
+
+Poll a previously submitted video conversion job.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uuid` | string | Yes | UUID returned by `filestack_convert_video` |
+
+---
+
+### Archive & Capture
+
+#### `filestack_zip_files`
+
+Bundle up to 100 file handles into a single ZIP CDN URL. Pure URL construction — no API call until the URL is fetched.
+
+```
+"Bundle handles abc123, def456, ghi789 as a ZIP"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `handles` | array of string | Yes | File handles (max 100) |
+
+**Returns:** `{ url: "https://cdn.filestackcontent.com/<APIKEY>/zip/[h1,h2,h3]" }`
+
+#### `filestack_screenshot_url`
+
+Capture a screenshot of a target web URL. Pure URL construction.
+
+```
+"Screenshot https://example.com on a mobile viewport"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `targetUrl` | string | Yes | Full http(s) URL to capture |
+| `options` | object | No | `{ agent: desktop/mobile, mode: all/window, width, height, delay, orientation, device }` |
+
+---
+
+### Workflows & Webhooks
+
+#### `filestack_run_workflow`
+
+Invoke a saved Filestack Workflow (designed in `dev.filestack.com → Workflows`). Workflows handle multi-step async pipelines, virus detection, video intelligence (`video_sfw`, `video_tagging`), and any branching logic.
+
+```
+"Run workflow 67d273c3-... on handle abc123XYZ"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `handleOrUrl` | string | Yes | File handle or external URL |
+| `workflowId` | string (UUID) | Yes | Workflow UUID from the Developer Portal |
+| `options` | object | No | `{ policy, signature }` for security-enabled apps. Policy must include `convert` AND `runWorkflow` calls. |
+
+#### `filestack_verify_webhook_signature`
+
+Verify a received Filestack webhook's HMAC-SHA256 signature **locally** — no network call. Use in your webhook receiver to authenticate requests.
+
+```
+"Verify this incoming webhook is genuinely from Filestack"
+```
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `rawBody` | string | Yes | Raw request body (exact bytes — capture before JSON parsing) |
+| `fsSignature` | string | Yes | `FS-Signature` header value |
+| `fsTimestamp` | string | Yes | `FS-Timestamp` header value |
+| `webhookSecret` | string | Yes | Per-webhook secret from the Developer Portal |
+
+**Returns:** `{ valid: boolean, expected: string }` (constant-time compare; `expected` for debugging only)
+
+#### `filestack_sign_webhook_payload`
+
+Generate `FS-Signature` and `FS-Timestamp` headers for a given body + secret. Useful for testing your own webhook receiver locally without triggering a real upload event.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `body` | string | Yes | Raw JSON body to sign |
+| `webhookSecret` | string | Yes | Per-webhook secret |
+| `timestamp` | number | No | Optional unix timestamp (defaults to now) |
+
+**Returns:** `{ "FS-Signature": <hex>, "FS-Timestamp": <str>, signPayload: "{ts}.{body}" }`
 
 ---
 
