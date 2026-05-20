@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1
+
+- **Cleanup release** — internal-only changes, no functional differences
+- Remove redundant `"skills": "./skills/"` entry from `plugin.json` (default auto-discovery path)
+- Drop non-standard `version`/`license` fields from individual SKILL.md frontmatter (license lives in plugin.json)
+- Delete duplicate `PLUGIN_DESCRIPTION.md` (content already in README.md)
+- Add language identifiers to fenced code blocks in `/filestack-transform` command
+
 ## 1.2.0
 
 - **Fix MCP server registration** — `.mcp.json` now uses the required `mcpServers` wrapper, restoring the 10 Filestack tools that previously failed to register

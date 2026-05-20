@@ -6,8 +6,6 @@ description: >
   usage tokens (FilestackClient, client.upload(, client.picker(, new Picker(, PickerOptions),
   config tokens (acceptedFileTypes, fromSources, storeTo),
   or when user asks how to add file upload to their app using Filestack.
-version: 1.0.0
-license: MIT
 ---
 
 # Filestack SDK Integration

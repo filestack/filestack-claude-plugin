@@ -1,7 +1,7 @@
 {
   "name": "filestack",
   "displayName": "Filestack",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Official Filestack plugin — upload files, build transformations, and generate security policies directly from Cursor.",
   "author": {
     "name": "Filestack",
