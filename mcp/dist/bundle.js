@@ -24066,8 +24066,7 @@ var transforms_manifest_default = {
       params: [
         { name: "width", type: "number", description: "Target width in pixels" },
         { name: "height", type: "number", description: "Target height in pixels" },
-        { name: "mode", type: "string", values: ["auto", "face", "object"], description: "Crop focus mode" },
-        { name: "fill_color", type: "string", description: "Hex color used when extending the image" }
+        { name: "mode", type: "string", values: ["auto", "face"], description: "Crop focus mode" }
       ]
     },
     {
@@ -24356,7 +24355,7 @@ var transforms_manifest_default = {
         { name: "loop", type: "number", description: "Loop count (0 = infinite)" },
         { name: "width", type: "number", description: "Output width" },
         { name: "height", type: "number", description: "Output height" },
-        { name: "fit", type: "string", values: ["preserve", "crop", "scale"], description: "Fit mode" }
+        { name: "fit", type: "string", values: ["clip", "scale", "crop"], description: "Fit mode" }
       ]
     },
     {
@@ -24534,8 +24533,8 @@ var transforms_manifest_default = {
       category: "format",
       description: "Convert output to a different format. Place this LAST in the chain \u2014 after all image manipulations.",
       params: [
-        { name: "format", type: "string", values: ["jpg", "jpeg", "png", "webp", "gif", "pdf", "svg", "tiff", "heic"], description: "Output format" },
-        { name: "quality", type: "number", description: "Quality 1-100 (jpg/webp/heic)" },
+        { name: "format", type: "string", values: ["jpg", "pjpg", "png", "webp", "svg", "pdf", "doc", "docx", "odt", "ppt", "pptx", "odp", "xls", "xlsx", "ods", "html", "txt"], description: "Output format. Image: jpg/pjpg (progressive)/png/webp/svg. Document: pdf/doc/docx/odt/ppt/pptx/odp/xls/xlsx/ods/html/txt." },
+        { name: "quality", type: "number", description: "Quality 1-100 (jpg/pjpg/webp)" },
         { name: "background", type: "string", description: "Background color for transparent areas (hex)" },
         { name: "page", type: "number", description: "Page number to extract (PDF input)" },
         { name: "density", type: "number", description: "Output DPI (PDF rasterization)" },
