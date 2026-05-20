@@ -4,13 +4,16 @@ import { ToolResult, success, toolError, AUTH_ERROR, SECRET_ERROR } from '../typ
 
 const CDN_BASE = 'https://cdn.filestackcontent.com';
 
-const VALID_CALLS = ['read', 'stat', 'write', 'writeUrl', 'store', 'convert', 'remove', 'revoke', 'pick', 'exif', 'runWorkflow'] as const;
+// Official policy call enum per filestack-js schema. 'revoke' is a deprecated server-side
+// alias for 'remove' — omitted here so the plugin always emits the modern form.
+const VALID_CALLS = ['pick', 'read', 'stat', 'write', 'writeUrl', 'store', 'convert', 'remove', 'exif', 'runWorkflow'] as const;
 type PolicyCall = typeof VALID_CALLS[number];
 
 export interface PolicyOptions {
   call: PolicyCall | PolicyCall[];
   expiry: number;
   handle?: string;
+  url?: string;        // restrict writeUrl/store to a specific source URL (or regex)
   path?: string;
   container?: string;
   minSize?: number;
@@ -30,6 +33,7 @@ function buildPolicyObject(options: PolicyOptions): Record<string, unknown> {
     call: calls,
   };
   if (options.handle) policy.handle = options.handle;
+  if (options.url) policy.url = options.url;
   if (options.path) policy.path = options.path;
   if (options.container) policy.container = options.container;
   if (options.minSize !== undefined) policy.minSize = options.minSize;
@@ -51,12 +55,14 @@ export function filestackGeneratePolicy(options: PolicyOptions): ToolResult<stri
   // Sort keys for deterministic serialization (not strictly required by Filestack,
   // but ensures consistent output for the same inputs)
   const policyJson = JSON.stringify(policyObj, Object.keys(policyObj).sort() as never);
-  // URL-safe base64 without padding — matches Python's base64.urlsafe_b64encode()
+  // URL-safe base64 WITH padding — matches Filestack server's strict
+  // base64.urlsafe_b64decode which requires input length % 4 == 0.
+  // Stripping padding caused "policy was not properly url-safe base64 encoded" errors
+  // for any policy whose JSON length wasn't a multiple of 3 bytes.
   const policyB64 = Buffer.from(policyJson)
     .toString('base64')
     .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+    .replace(/\//g, '_');
   return success(policyB64);
 }
 
@@ -76,7 +82,6 @@ export function filestackGenerateSignedUrl(
 ): ToolResult<SignedUrlResult> {
   if (!hasApiKey()) return AUTH_ERROR;
   if (!hasAppSecret()) return SECRET_ERROR;
-  const { apiKey } = getCredentials();
 
   const policyResult = filestackGeneratePolicy(options);
   if (policyResult.result === null) return policyResult as ToolResult<SignedUrlResult>;
@@ -84,7 +89,11 @@ export function filestackGenerateSignedUrl(
   const sigResult = filestackSignPolicy(policyResult.result);
   if (sigResult.result === null) return sigResult as ToolResult<SignedUrlResult>;
 
-  const signedUrl = `${CDN_BASE}/${handle}?apikey=${apiKey}&policy=${policyResult.result}&signature=${sigResult.result}`;
+  // Path-based security segment — the canonical Filestack CDN form, matches
+  // filestack-js and filestack-python SDK output. Chainable with transforms:
+  //   cdn.filestackcontent.com/<transforms>/security=policy:...,signature:.../<handle>
+  // Per docs/content/security/policies.md.
+  const signedUrl = `${CDN_BASE}/security=policy:${policyResult.result},signature:${sigResult.result}/${handle}`;
   return success({
     policy: policyResult.result,
     signature: sigResult.result,

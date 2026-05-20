@@ -343,14 +343,14 @@ https://cdn.filestackcontent.com/crop_faces=faces:1/resize=width:400,height:400,
 
 > "I need a signed URL for handle XYZ123 that allows read access for 2 hours"
 
-Claude calls `filestack_generate_signed_url` and returns a policy, signature, and ready-to-use URL:
+Claude calls `filestack_generate_signed_url` and returns a policy, signature, and ready-to-use URL in the canonical Filestack path-based form (chainable with transforms):
 ```
-https://cdn.filestackcontent.com/XYZ123?apikey=YOUR_KEY&policy=eyJ...&signature=a1b2c3...
+https://cdn.filestackcontent.com/security=policy:eyJ...,signature:a1b2c3.../XYZ123
 ```
 
 ### Debug a 403 error
 
-> "I'm getting `{"result": "error", "error": {"code": 403, "msg": "Policy required"}}` from the CDN"
+> "I'm getting `{"result": "error", "error": {"code": 403, "msg": "Policy required"}}` from the v1 API"
 
 Claude activates the `filestack-error-diagnosis` skill and walks through: Is security enabled on your app? Is the policy expired? Does the policy include `read` scope? Is your CORS origin whitelisted?
 

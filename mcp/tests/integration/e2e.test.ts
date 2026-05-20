@@ -40,7 +40,7 @@ describeIf('integration: full upload → transform → sign → delete flow', ()
     const expiry = Math.floor(Date.now() / 1000) + 3600;
     const result = filestackGenerateSignedUrl(uploadedHandle, { call: 'read', expiry });
     expect(result.error).toBeNull();
-    expect((result.result as { signedUrl: string }).signedUrl).toContain('policy=');
+    expect((result.result as { signedUrl: string }).signedUrl).toMatch(/security=policy:[^,]+,signature:[a-f0-9]+\//);
   });
 
   it('deletes the uploaded file', async () => {

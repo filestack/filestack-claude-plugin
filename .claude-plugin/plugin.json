@@ -1,7 +1,7 @@
 {
   "name": "filestack",
   "description": "Official Filestack plugin — upload files, build transformations, and generate security policies directly from Claude Code.",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "author": {
     "name": "Filestack",
     "email": "support@filestack.com"

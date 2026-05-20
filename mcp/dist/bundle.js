@@ -24047,7 +24047,7 @@ var transforms_manifest_default = {
         { name: "width", type: "number", description: "Width in pixels" },
         { name: "height", type: "number", description: "Height in pixels" },
         { name: "fit", type: "string", values: ["clip", "crop", "scale", "max"], description: "Resize strategy" },
-        { name: "align", type: "string", values: ["top", "bottom", "left", "right", "center", "faces"], description: "Alignment when cropping" }
+        { name: "align", type: "string", values: ["top", "middle", "bottom", "left", "right", "center", "faces"], description: "Alignment when cropping" }
       ]
     },
     {
@@ -24196,7 +24196,7 @@ function filestackListTransforms() {
 // src/tools/security.ts
 var import_crypto = require("crypto");
 var CDN_BASE2 = "https://cdn.filestackcontent.com";
-var VALID_CALLS = ["read", "stat", "write", "writeUrl", "store", "convert", "remove", "revoke", "pick", "exif", "runWorkflow"];
+var VALID_CALLS = ["pick", "read", "stat", "write", "writeUrl", "store", "convert", "remove", "exif", "runWorkflow"];
 function buildPolicyObject(options) {
   const calls = Array.isArray(options.call) ? options.call : [options.call];
   const policy = {
@@ -24204,6 +24204,7 @@ function buildPolicyObject(options) {
     call: calls
   };
   if (options.handle) policy.handle = options.handle;
+  if (options.url) policy.url = options.url;
   if (options.path) policy.path = options.path;
   if (options.container) policy.container = options.container;
   if (options.minSize !== void 0) policy.minSize = options.minSize;
@@ -24221,7 +24222,7 @@ function filestackGeneratePolicy(options) {
   }
   const policyObj = buildPolicyObject(options);
   const policyJson = JSON.stringify(policyObj, Object.keys(policyObj).sort());
-  const policyB64 = Buffer.from(policyJson).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const policyB64 = Buffer.from(policyJson).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
   return success2(policyB64);
 }
 function filestackSignPolicy(policyB64) {
@@ -24233,12 +24234,11 @@ function filestackSignPolicy(policyB64) {
 function filestackGenerateSignedUrl(handle, options) {
   if (!hasApiKey()) return AUTH_ERROR;
   if (!hasAppSecret()) return SECRET_ERROR;
-  const { apiKey } = getCredentials();
   const policyResult = filestackGeneratePolicy(options);
   if (policyResult.result === null) return policyResult;
   const sigResult = filestackSignPolicy(policyResult.result);
   if (sigResult.result === null) return sigResult;
-  const signedUrl = `${CDN_BASE2}/${handle}?apikey=${apiKey}&policy=${policyResult.result}&signature=${sigResult.result}`;
+  const signedUrl = `${CDN_BASE2}/security=policy:${policyResult.result},signature:${sigResult.result}/${handle}`;
   return success2({
     policy: policyResult.result,
     signature: sigResult.result,
@@ -24341,7 +24341,7 @@ var TOOLS = [
       type: "object",
       properties: {
         call: {
-          description: "Permission(s) to grant. Valid values: read, stat, write, writeUrl, store, convert, remove, revoke, pick, exif, runWorkflow",
+          description: "Permission(s) to grant. Valid values: pick, read, stat, write, writeUrl, store, convert, remove, exif, runWorkflow",
           oneOf: [
             { type: "string" },
             { type: "array", items: { type: "string" } }
@@ -24349,6 +24349,7 @@ var TOOLS = [
         },
         expiry: { type: "number", description: "Unix timestamp (seconds) when the policy expires" },
         handle: { type: "string", description: "Restrict policy to a specific file handle" },
+        url: { type: "string", description: "Restrict writeUrl/store to a specific source URL or regex" },
         path: { type: "string", description: "Restrict policy to a path prefix" },
         container: { type: "string", description: "Restrict policy to a storage container" },
         minSize: { type: "number", description: "Minimum file size in bytes" },
@@ -24375,6 +24376,7 @@ var TOOLS = [
         handle: { type: "string" },
         call: { oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
         expiry: { type: "number" },
+        url: { type: "string", description: "Restrict writeUrl/store to a specific source URL or regex" },
         container: { type: "string" },
         path: { type: "string" },
         minSize: { type: "number" },

@@ -24,12 +24,16 @@ description: >
 
 ## Register a Webhook URL
 
-```bash
-curl -X POST https://api.filestackapi.com/webhooks/YOUR_APP_ID \
-  -H "Content-Type: application/json" \
-  -H "Filestack-API-Key: YOUR_API_KEY" \
-  -d '{ "url": "https://yourdomain.com/filestack-webhook", "webhook_type": "fp.upload" }'
-```
+Webhook registration is done through the **Filestack Developer Portal** UI — there is no public REST endpoint for creating webhooks. Walk the user through:
+
+1. Sign in at <https://dev.filestack.com/>
+2. Open the app whose events you want to receive
+3. Navigate to **Webhooks** in the left nav
+4. Click **Add Webhook**, paste the receiver URL (`https://yourdomain.com/filestack-webhook`)
+5. Select the events to subscribe to (e.g. `fp.upload`, `fp.video_converse`)
+6. **Copy the generated webhook secret** — it appears only once, you'll need it for signature verification (see below)
+
+If the user asks for an API-based registration flow, explain that this isn't currently exposed publicly — they have to use the portal. (There is an internal admin endpoint but it is gated by admin auth and not customer-accessible.)
 
 ## Webhook Payload Shape
 
@@ -149,8 +153,7 @@ Filestack's webhook consumer has a configurable timeout (default ~30s). If your 
 Filestack retries — leading to duplicate processing. Always acknowledge (200/201/204) before doing any slow work.
 
 **Handlers must be idempotent.**
-Filestack retries failed deliveries up to 5 times with timeouts [10s, 60s, 5min, 15min, 1hr].
-Success codes are 200, 201, 204. Use the `id` field from the payload as an idempotency key.
+Filestack retries failed deliveries up to 5 times with backoffs `[10s, 60s, 5min, 15min, 1hr]` (per the production webhook consumer's `RESEND_TIMEOUTS`). Note: the public docs sometimes quote a different cadence (3 attempts at 5min/30min/12hr) — the production schedule is the one above. Success codes are 200, 201, 204. Use the `id` field from the payload as an idempotency key.
 
 **Use raw body for signature verification.**
 JSON parsers may reformat the body, invalidating the signature. Capture the raw bytes
