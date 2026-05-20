@@ -9649,12 +9649,12 @@ var require_lib2 = __commonJS({
       const dest = new URL$1(destination).protocol;
       return orig === dest;
     };
-    function fetch3(url2, opts) {
-      if (!fetch3.Promise) {
+    function fetch6(url2, opts) {
+      if (!fetch6.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch3.Promise;
-      return new fetch3.Promise(function(resolve, reject) {
+      Body.Promise = fetch6.Promise;
+      return new fetch6.Promise(function(resolve, reject) {
         const request = new Request(url2, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -9725,7 +9725,7 @@ var require_lib2 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch3.isRedirect(res.statusCode)) {
+          if (fetch6.isRedirect(res.statusCode)) {
             const location = headers.get("Location");
             let locationURL = null;
             try {
@@ -9787,7 +9787,7 @@ var require_lib2 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch3(new Request(locationURL, requestOpts)));
+                resolve(fetch6(new Request(locationURL, requestOpts)));
                 finalize2();
                 return;
             }
@@ -9879,11 +9879,11 @@ var require_lib2 = __commonJS({
         stream.end();
       }
     }
-    fetch3.isRedirect = function(code) {
+    fetch6.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch3.Promise = global.Promise;
-    module2.exports = exports2 = fetch3;
+    fetch6.Promise = global.Promise;
+    module2.exports = exports2 = fetch6;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -24691,6 +24691,263 @@ function filestackGenerateSignedUrl(handle, options) {
   });
 }
 
+// src/tools/intelligence.ts
+var import_node_fetch3 = __toESM(require_lib2());
+var CDN_BASE3 = "https://cdn.filestackcontent.com";
+var FILE_TASKS = ["tags", "sfw", "caption", "ocr", "copyright", "image_sentiment", "doc_detection"];
+var TEXT_TASKS = ["text_sentiment"];
+var ALL_TASKS = [...FILE_TASKS, ...TEXT_TASKS];
+async function filestackAnalyze(task, handleOrText, options) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  if (!ALL_TASKS.includes(task)) {
+    return toolError("invalid_input", `Unknown task '${task}'. Valid: ${ALL_TASKS.join(", ")}`);
+  }
+  if (!handleOrText || typeof handleOrText !== "string") {
+    return toolError("invalid_input", task === "text_sentiment" ? "text is required" : "handle is required");
+  }
+  const securitySeg = options?.policy && options?.signature ? `security=policy:${options.policy},signature:${options.signature}` : null;
+  let taskSeg;
+  let pathSuffix;
+  if (task === "text_sentiment") {
+    if (!securitySeg) {
+      return toolError("invalid_input", 'text_sentiment requires a signed policy. Pass options.policy and options.signature (use filestack_generate_signed_url with call: ["convert"]).');
+    }
+    const text = options?.text ?? handleOrText;
+    const language = options?.language;
+    const escaped = encodeURIComponent(text);
+    const langSeg = language ? `,language:${language}` : "";
+    taskSeg = `text_sentiment=text:"${escaped}"${langSeg}`;
+    pathSuffix = "";
+  } else if (task === "doc_detection") {
+    const segs = [];
+    if (options?.coords !== void 0) segs.push(`coords:${options.coords}`);
+    if (options?.preprocess !== void 0) segs.push(`preprocess:${options.preprocess}`);
+    taskSeg = segs.length ? `doc_detection=${segs.join(",")}` : "doc_detection";
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
+  } else {
+    taskSeg = task;
+    pathSuffix = `/${encodeURIComponent(handleOrText)}`;
+  }
+  const segments = securitySeg ? `${securitySeg}/${taskSeg}` : taskSeg;
+  const url2 = `${CDN_BASE3}/${segments}${pathSuffix}`;
+  try {
+    const res = await (0, import_node_fetch3.default)(url2);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json();
+    return success2(data);
+  } catch (err) {
+    const e = err;
+    return toolError(500, `Network error: ${e.message ?? "Request failed"}`);
+  }
+}
+
+// src/tools/document.ts
+var CDN_BASE4 = "https://cdn.filestackcontent.com";
+var VALID_FORMATS = [
+  "pdf",
+  "doc",
+  "docx",
+  "odt",
+  "ppt",
+  "pptx",
+  "odp",
+  "xls",
+  "xlsx",
+  "ods",
+  "html",
+  "txt",
+  "jpg",
+  "pjpg",
+  "png",
+  "webp",
+  "svg"
+];
+function filestackConvertDocument(handleOrUrl, format, options) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  const { apiKey } = getCredentials();
+  if (!handleOrUrl) return toolError("invalid_input", "handleOrUrl is required");
+  if (!VALID_FORMATS.includes(format)) {
+    return toolError("invalid_input", `Unsupported format '${format}'. Valid: ${VALID_FORMATS.join(", ")}`);
+  }
+  const params = [`format:${format}`];
+  if (options?.page !== void 0) params.push(`page:${options.page}`);
+  if (options?.density !== void 0) params.push(`density:${options.density}`);
+  if (options?.quality !== void 0) params.push(`quality:${options.quality}`);
+  if (options?.pageformat) params.push(`pageformat:${options.pageformat}`);
+  if (options?.pageorientation) params.push(`pageorientation:${options.pageorientation}`);
+  if (options?.secure !== void 0) params.push(`secure:${options.secure}`);
+  const outputSeg = `output=${params.join(",")}`;
+  const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
+  const url2 = isExternalUrl ? `${CDN_BASE4}/${apiKey}/${outputSeg}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE4}/${outputSeg}/${handleOrUrl}`;
+  return success2({ url: url2 });
+}
+
+// src/tools/video.ts
+var import_node_fetch4 = __toESM(require_lib2());
+var CDN_BASE5 = "https://cdn.filestackcontent.com";
+async function filestackConvertVideo(handleOrUrl, preset, options) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  const { apiKey } = getCredentials();
+  if (!handleOrUrl) return toolError("invalid_input", "handleOrUrl is required");
+  if (!preset) return toolError("invalid_input", "preset is required (e.g. h264, hls, dash, mp3, mp4, m4a, webm)");
+  const params = [`preset:${preset}`];
+  if (options) {
+    for (const [k, v] of Object.entries(options)) {
+      if (v !== void 0 && v !== null) params.push(`${k}:${v}`);
+    }
+  }
+  const taskSeg = `video_convert=${params.join(",")}`;
+  const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
+  const url2 = isExternalUrl ? `${CDN_BASE5}/${apiKey}/${taskSeg}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE5}/${taskSeg}/${handleOrUrl}`;
+  try {
+    const res = await (0, import_node_fetch4.default)(url2);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json();
+    if (!data.uuid) {
+      return toolError(500, `Unexpected response shape: ${JSON.stringify(data).slice(0, 200)}`);
+    }
+    return success2({
+      uuid: data.uuid,
+      status_url: `${CDN_BASE5}/video_convert/${data.uuid}`,
+      timestamp: data.timestamp ?? Date.now() / 1e3
+    });
+  } catch (err) {
+    const e = err;
+    return toolError(500, `Network error: ${e.message ?? "Request failed"}`);
+  }
+}
+async function filestackVideoStatus(uuid3) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  if (!uuid3 || !/^[a-f0-9-]+$/i.test(uuid3)) {
+    return toolError("invalid_input", "uuid must be a valid UUID");
+  }
+  try {
+    const res = await (0, import_node_fetch4.default)(`${CDN_BASE5}/video_convert/${uuid3}`);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json();
+    return success2(data);
+  } catch (err) {
+    const e = err;
+    return toolError(500, `Network error: ${e.message ?? "Request failed"}`);
+  }
+}
+
+// src/tools/archive.ts
+var CDN_BASE6 = "https://cdn.filestackcontent.com";
+var HANDLE_RE2 = /^[a-zA-Z0-9_\-]+$/;
+function filestackZipFiles(handles) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  const { apiKey } = getCredentials();
+  if (!Array.isArray(handles) || handles.length === 0) {
+    return toolError("invalid_input", "handles must be a non-empty array of file handles");
+  }
+  if (handles.length > 100) {
+    return toolError("invalid_input", "maximum 100 handles per zip request");
+  }
+  for (const h of handles) {
+    if (typeof h !== "string" || !HANDLE_RE2.test(h)) {
+      return toolError("invalid_input", `Invalid handle in array: ${String(h).slice(0, 40)}`);
+    }
+  }
+  const list = `[${handles.join(",")}]`;
+  const url2 = `${CDN_BASE6}/${apiKey}/zip/${list}`;
+  return success2({ url: url2 });
+}
+
+// src/tools/capture.ts
+var CDN_BASE7 = "https://cdn.filestackcontent.com";
+function filestackScreenshotUrl(targetUrl, options) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  const { apiKey } = getCredentials();
+  if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
+    return toolError("invalid_input", "targetUrl must be a full http(s) URL");
+  }
+  const params = [];
+  if (options?.agent) params.push(`agent:${options.agent}`);
+  if (options?.mode) params.push(`mode:${options.mode}`);
+  if (options?.width !== void 0) params.push(`width:${options.width}`);
+  if (options?.height !== void 0) params.push(`height:${options.height}`);
+  if (options?.delay !== void 0) params.push(`delay:${options.delay}`);
+  if (options?.orientation) params.push(`orientation:${options.orientation}`);
+  if (options?.device) params.push(`device:${options.device}`);
+  const taskSeg = params.length ? `urlscreenshot=${params.join(",")}` : "urlscreenshot";
+  const url2 = `${CDN_BASE7}/${apiKey}/${taskSeg}/${encodeURIComponent(targetUrl)}`;
+  return success2({ url: url2 });
+}
+
+// src/tools/workflow.ts
+var import_node_fetch5 = __toESM(require_lib2());
+var CDN_BASE8 = "https://cdn.filestackcontent.com";
+var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+async function filestackRunWorkflow(handleOrUrl, workflowId, options) {
+  if (!hasApiKey()) return AUTH_ERROR;
+  const { apiKey } = getCredentials();
+  if (!handleOrUrl) return toolError("invalid_input", "handleOrUrl is required");
+  if (!workflowId || !UUID_RE.test(workflowId)) {
+    return toolError("invalid_input", "workflowId must be a UUID (find it in dev.filestack.com \u2192 Workflows)");
+  }
+  const segments = [];
+  if (options?.policy && options?.signature) {
+    segments.push(`security=policy:${options.policy},signature:${options.signature}`);
+  }
+  segments.push(`run_workflow=id:${workflowId}`);
+  const isExternalUrl = /^https?:\/\//.test(handleOrUrl);
+  const url2 = isExternalUrl ? `${CDN_BASE8}/${apiKey}/${segments.join("/")}/${encodeURIComponent(handleOrUrl)}` : `${CDN_BASE8}/${segments.join("/")}/${handleOrUrl}`;
+  try {
+    const res = await (0, import_node_fetch5.default)(url2);
+    if (!res.ok) {
+      const text = await res.text();
+      return toolError(res.status, text || res.statusText);
+    }
+    const data = await res.json();
+    return success2(data);
+  } catch (err) {
+    const e = err;
+    return toolError(500, `Network error: ${e.message ?? "Request failed"}`);
+  }
+}
+
+// src/tools/webhook.ts
+var import_crypto2 = require("crypto");
+function filestackVerifyWebhookSignature(rawBody, fsSignature, fsTimestamp, webhookSecret) {
+  if (!rawBody) return toolError("invalid_input", "rawBody is required (the raw bytes of the webhook request body)");
+  if (!fsSignature) return toolError("invalid_input", "fsSignature is required (FS-Signature header value)");
+  if (!fsTimestamp) return toolError("invalid_input", "fsTimestamp is required (FS-Timestamp header value)");
+  if (!webhookSecret) return toolError("invalid_input", "webhookSecret is required (the per-webhook secret from dev.filestack.com)");
+  const signPayload = `${fsTimestamp}.${rawBody}`;
+  const expected = (0, import_crypto2.createHmac)("sha256", webhookSecret).update(signPayload).digest("hex");
+  let valid = false;
+  try {
+    const a = Buffer.from(fsSignature, "hex");
+    const b = Buffer.from(expected, "hex");
+    valid = a.length === b.length && (0, import_crypto2.timingSafeEqual)(a, b);
+  } catch {
+    valid = false;
+  }
+  return success2({ valid, expected });
+}
+function filestackSignWebhookPayload(body, webhookSecret, timestamp) {
+  if (!body) return toolError("invalid_input", "body is required (raw JSON string)");
+  if (!webhookSecret) return toolError("invalid_input", "webhookSecret is required");
+  const ts = (timestamp ?? Math.floor(Date.now() / 1e3)).toString();
+  const signPayload = `${ts}.${body}`;
+  const signature = (0, import_crypto2.createHmac)("sha256", webhookSecret).update(signPayload).digest("hex");
+  return success2({
+    "FS-Signature": signature,
+    "FS-Timestamp": ts,
+    signPayload
+  });
+}
+
 // src/index.ts
 var TOOLS = [
   {
@@ -24829,6 +25086,147 @@ var TOOLS = [
       },
       required: ["handle", "call", "expiry"]
     }
+  },
+  {
+    name: "filestack_analyze",
+    description: "Run a Filestack intelligence (AI/ML) task: tags, sfw, caption, ocr, copyright, image_sentiment, doc_detection, or text_sentiment. Returns task-specific JSON.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task: {
+          type: "string",
+          enum: ["tags", "sfw", "caption", "ocr", "copyright", "image_sentiment", "doc_detection", "text_sentiment"],
+          description: "Which intelligence task to run"
+        },
+        handleOrText: {
+          type: "string",
+          description: "File handle for file-based tasks; raw text for text_sentiment"
+        },
+        options: {
+          type: "object",
+          description: "Task-specific options: doc_detection (coords, preprocess); text_sentiment (text, language)"
+        }
+      },
+      required: ["task", "handleOrText"]
+    }
+  },
+  {
+    name: "filestack_convert_document",
+    description: "Convert documents between formats (DOC/DOCX/PPT/XLSX/ODT/HTML/etc. -> PDF/image/other) via Filestack output transform. Returns the CDN URL of the converted file.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        handleOrUrl: { type: "string", description: "Source file handle or external URL" },
+        format: {
+          type: "string",
+          enum: ["pdf", "doc", "docx", "odt", "ppt", "pptx", "odp", "xls", "xlsx", "ods", "html", "txt", "jpg", "pjpg", "png", "webp", "svg"],
+          description: "Target format"
+        },
+        options: {
+          type: "object",
+          description: "Optional: page (PDF page to extract), density (DPI), quality, pageformat (a4/letter/etc.), pageorientation, secure"
+        }
+      },
+      required: ["handleOrUrl", "format"]
+    }
+  },
+  {
+    name: "filestack_convert_video",
+    description: "Submit a video transcode job (async, Telestream-backed). Returns a UUID and status_url. Use filestack_video_status to poll, or configure a webhook for the fp.video_converse event.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        handleOrUrl: { type: "string" },
+        preset: { type: "string", description: "Output preset: h264, hls, dash, mp3, mp4, m4a, webm, etc." },
+        options: {
+          type: "object",
+          description: "Optional encoding params: width, height, fps, video_bitrate, audio_bitrate, force, clip_offset, clip_length, email, watermark_url, etc."
+        }
+      },
+      required: ["handleOrUrl", "preset"]
+    }
+  },
+  {
+    name: "filestack_video_status",
+    description: "Poll the status of a previously submitted video conversion job by UUID.",
+    inputSchema: {
+      type: "object",
+      properties: { uuid: { type: "string", description: "UUID returned by filestack_convert_video" } },
+      required: ["uuid"]
+    }
+  },
+  {
+    name: "filestack_zip_files",
+    description: "Build a CDN URL that bundles a list of file handles into a single ZIP archive. Pure URL construction \u2014 no API call until the URL is fetched.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        handles: {
+          type: "array",
+          items: { type: "string" },
+          description: "File handles to bundle (max 100)"
+        }
+      },
+      required: ["handles"]
+    }
+  },
+  {
+    name: "filestack_screenshot_url",
+    description: "Build a CDN URL that captures a screenshot of a target web page. Pure URL construction.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        targetUrl: { type: "string", description: "Full http(s) URL to capture" },
+        options: {
+          type: "object",
+          description: "Optional: agent (desktop/mobile), mode (all/window), width, height, delay (ms), orientation (portrait/landscape), device (mobile profile)"
+        }
+      },
+      required: ["targetUrl"]
+    }
+  },
+  {
+    name: "filestack_run_workflow",
+    description: "Run a saved Filestack Workflow against a file handle or URL. Workflows are designed in dev.filestack.com -> Workflows and identified by UUID. Required policy calls: convert, runWorkflow.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        handleOrUrl: { type: "string" },
+        workflowId: { type: "string", description: "Workflow UUID from dev.filestack.com -> Workflows" },
+        options: {
+          type: "object",
+          description: "For security-enabled apps: { policy, signature }. Policies must include both convert and runWorkflow calls."
+        }
+      },
+      required: ["handleOrUrl", "workflowId"]
+    }
+  },
+  {
+    name: "filestack_verify_webhook_signature",
+    description: "Verify a Filestack webhook HMAC-SHA256 signature locally \u2014 no network call. Returns { valid, expected }. Use to authenticate incoming webhook requests in your receiver.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        rawBody: { type: "string", description: "Raw request body (exact bytes, before any JSON parsing)" },
+        fsSignature: { type: "string", description: "FS-Signature header value" },
+        fsTimestamp: { type: "string", description: "FS-Timestamp header value" },
+        webhookSecret: { type: "string", description: "Per-webhook secret from dev.filestack.com" }
+      },
+      required: ["rawBody", "fsSignature", "fsTimestamp", "webhookSecret"]
+    }
+  },
+  {
+    name: "filestack_sign_webhook_payload",
+    description: "Generate FS-Signature and FS-Timestamp headers for a webhook body (for testing your own webhook receiver locally).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        body: { type: "string", description: "Raw JSON body string" },
+        webhookSecret: { type: "string" },
+        timestamp: { type: "number", description: "Optional unix timestamp; defaults to now" }
+      },
+      required: ["body", "webhookSecret"]
+    }
   }
 ];
 var server = new Server(
@@ -24871,6 +25269,61 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       case "filestack_generate_signed_url":
         result = filestackGenerateSignedUrl(a.handle, a);
+        break;
+      case "filestack_analyze":
+        result = await filestackAnalyze(
+          a.task,
+          a.handleOrText,
+          a.options
+        );
+        break;
+      case "filestack_convert_document":
+        result = await filestackConvertDocument(
+          a.handleOrUrl,
+          a.format,
+          a.options
+        );
+        break;
+      case "filestack_convert_video":
+        result = await filestackConvertVideo(
+          a.handleOrUrl,
+          a.preset,
+          a.options
+        );
+        break;
+      case "filestack_video_status":
+        result = await filestackVideoStatus(a.uuid);
+        break;
+      case "filestack_zip_files":
+        result = filestackZipFiles(a.handles);
+        break;
+      case "filestack_screenshot_url":
+        result = filestackScreenshotUrl(
+          a.targetUrl,
+          a.options
+        );
+        break;
+      case "filestack_run_workflow":
+        result = await filestackRunWorkflow(
+          a.handleOrUrl,
+          a.workflowId,
+          a.options
+        );
+        break;
+      case "filestack_verify_webhook_signature":
+        result = filestackVerifyWebhookSignature(
+          a.rawBody,
+          a.fsSignature,
+          a.fsTimestamp,
+          a.webhookSecret
+        );
+        break;
+      case "filestack_sign_webhook_payload":
+        result = filestackSignWebhookPayload(
+          a.body,
+          a.webhookSecret,
+          a.timestamp
+        );
         break;
       default:
         result = toolError("unknown_tool", `Unknown tool: ${name}`);

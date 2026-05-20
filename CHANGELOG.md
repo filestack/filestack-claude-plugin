@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.3.0
+
+Comprehensive Filestack coverage release. The plugin now exposes 19 MCP tools (was 10) covering intelligence, document conversion, video transcoding, archives, screenshots, workflows, and webhook helpers — alongside the existing file ops, transforms, and security tools.
+
+### New MCP tools (9)
+
+**Intelligence (AI/ML)** — one unified entry point for 8 backed-by-Rekognition/Vision/Comprehend tasks:
+
+- `filestack_analyze` — `task: tags | sfw | caption | ocr | copyright | image_sentiment | doc_detection | text_sentiment`. Returns task-specific JSON. (Video intelligence — `video_sfw`, `video_tagging` — remains workflow-only.)
+
+**Document conversion**:
+
+- `filestack_convert_document` — convert between DOC, DOCX, ODT, PPT, PPTX, ODP, XLS, XLSX, ODS, HTML, TXT, PDF and image formats (JPG, PJPG, PNG, WebP, SVG). Backed by Filestack's `output` transform task.
+
+**Video** (async):
+
+- `filestack_convert_video` — submit a Telestream transcode job. Returns `{ uuid, status_url }`. Accepts presets (`h264`, `hls`, `dash`, `mp3`, `mp4`, `m4a`, `webm`, etc.) plus width/height/fps/bitrates/clip-offsets/watermark.
+- `filestack_video_status` — poll a previously submitted job.
+
+**Archive / capture**:
+
+- `filestack_zip_files` — bundle up to 100 handles into a single ZIP CDN URL.
+- `filestack_screenshot_url` — capture a screenshot of any web URL. Supports desktop/mobile agents, viewport sizing, capture delay, device profiles.
+
+**Workflows**:
+
+- `filestack_run_workflow` — invoke a saved workflow (created in `dev.filestack.com → Workflows`) by UUID. Handles bare and security-signed invocation. Covers the workflow-only capabilities: virus detection, video intelligence, phishing detection, multi-step automated pipelines.
+
+**Webhook helpers** (pure local crypto, no API calls):
+
+- `filestack_verify_webhook_signature` — constant-time HMAC-SHA256 verification of `FS-Signature` over `"{FS-Timestamp}.{body}"`. Drop into a receiver to authenticate incoming Filestack webhooks.
+- `filestack_sign_webhook_payload` — generate `FS-Signature` and `FS-Timestamp` for a given body + secret. For testing your own webhook receiver locally without a real upload event.
+
+### New skills (2)
+
+- **`filestack-intelligence`** — when to use each AI/ML task, output shapes, moderation pipeline patterns, OCR / caption / sentiment use cases, policy `call` requirements (`convert` needed), why intelligence results are CDN-cached.
+- **`filestack-workflow-design`** — direct CDN task vs Workflow decision matrix, designing workflows in the Developer Portal, 4 common patterns (moderation, document processing, video pipeline, virus gate), invocation via `filestack_run_workflow`, picker-driven triggering via `storeTo.workflows`, `fs.workflow` webhook event handling.
+
+### Tests
+
+20 new unit tests across `intelligence`, `archive`, `capture`, `workflow`, and `webhook`. Total: 58 passing (was 38), 5 integration tests skipped (require `FILESTACK_INTEGRATION=1`).
+
+### Scope notes
+
+Out of scope for this release (genuinely cannot be done as MCP tools):
+
+- Interactive picker widget — requires browser DOM + OAuth redirects. Setup pattern remains documented in `filestack-sdk-integration` skill.
+- Webhook CRUD via REST — Filestack does not expose a public registration endpoint; only the Developer Portal UI works. Documented in `filestack-webhook-setup` skill.
+- Admin / billing / management APIs — internal endpoints gated by admin auth.
+
 ## 1.2.4
 
 Transforms manifest expansion — `filestack_list_transforms` now documents **58 transforms** across image, decorative, face, intelligence, document, video, capture, archive, code, format, storage, and delivery categories (was 14 image-only transforms).
